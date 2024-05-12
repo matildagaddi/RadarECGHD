@@ -6,7 +6,9 @@ class MatildaNet(nn.Module):
         super(MatildaNet, self).__init__()
 
         self.layers = nn.Sequential(
-
+            #modwt should go here instead of first conv layer
+            #modwtLayer('Level',5,'IncludeLowpass',false,'SelectedLevels',3:5,"Wavelet","sym2")
+            #flattenLayer
             nn.Conv1d(in_channels=1, out_channels=3, kernel_size=4, stride=1, padding=0),
             nn.Conv1d(in_channels=3, out_channels=8, kernel_size=64, stride=8, padding=0),
             nn.BatchNorm1d(120),
@@ -46,7 +48,7 @@ class MatildaNet(nn.Module):
 
 
 
-x = torch.randn(1,1024)
+x = torch.zeros(1,1024)
 model = MatildaNet()
 y = model(x)
 print(y)
