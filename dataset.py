@@ -151,8 +151,13 @@ class MyDataset(data.Dataset):
         data_ecg = radar_data['tfm_ecg1']
         #print(min(file_dict['tfm_ecg1']),)
         
-        plt.plot(data_i[5000:6020]/5) #1024 for 5 seconds = 205 points per second (original was 2000 per second)
-        plt.plot(data_ecg[5000:6020]) 
+        # plt.plot(data_i[6144:7168]/5, color = 'orange') #1024 for 5 seconds = 205 points per second (original was 2000 per second)
+        plt.plot(data_q[3000:7000]/5, color = 'purple') #they might just be using data_q?
+        # plt.plot(data_i[6144:7168]+data_q[6144:7168]/5, color = 'pink')
+        # plt.plot(data_i[6144:7168]*data_q[6144:7168]/5, color = 'green')
+        # plt.plot(data_i[6144:7168]+data_q[6144:7168]/5*data_i[6144:7168]*data_q[6144:7168], color = 'blue')
+        # plt.plot(data_i[6144:7168]*data_q[6144:7168]/5*data_i[6144:7168]+data_q[6144:7168], color = 'red')
+        plt.plot(data_ecg[3000:7000]) #7 7th window of 5 seconds 0-32000 1024*6 = 6144
         plt.show()  
 
         # print(torch.mean(torch.FloatTensor(data_i)))

@@ -1,5 +1,6 @@
 import torch 
 import torch.nn as nn
+from modwt import modwt
 
 class MatildaNet(nn.Module):
     def __init__(self):
