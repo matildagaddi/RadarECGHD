@@ -13,6 +13,8 @@ from datetime import datetime, date, time
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
+from modwt import modwt
+
 #standardize center of data / levels. get mean (or median) value for all, subract individual means and add overall mean
 
 class MyDataset(data.Dataset):
@@ -97,14 +99,10 @@ class MyDataset(data.Dataset):
 
         path = '/Users/matildagaddi/Documents/SEElab/apnea_dataset/'
         step_for_samples = int(self.window_size//self.window_samples)
-        #radar_data = {}
         radar_data = {'radar_i': torch.ShortTensor(), 'radar_q': torch.ShortTensor(), 'tfm_ecg1': torch.FloatTensor()}
 
         def process_data(file, radar_data): 
             file_dict = loadmat(path+file) #loads dictionary 
-            # plt.plot(pd.Series(file_dict['tfm_ecg1'][51000:52000].reshape(1000)).rolling(40).mean()) 
-            # plt.plot(file_dict['radar_i'][50000:60000]/2000) #maybe there have different rates of collection
-            # plt.show() 
             cur_radar_data = {'radar_i': file_dict['radar_i'], 'radar_q': file_dict['radar_q'], 
             'tfm_ecg1': pd.Series(file_dict['tfm_ecg1'].reshape(len(file_dict['tfm_ecg1']))).rolling(40).mean()}
             #ecg not smoothed, need to take mean of nearest points (40: phase length before sampling), ecg2 is an amplified version?
@@ -118,14 +116,13 @@ class MyDataset(data.Dataset):
             stdscalerq = StandardScaler()
             stdscalerq.fit(cur_radar_data['radar_q'])
             cur_radar_data['radar_q'] = torch.Tensor(stdscaleri.transform(cur_radar_data['radar_q']))
-            # standard_i = torch.sub(cur_radar_data['radar_i'], torch.mean(cur_radar_data['radar_i'].type(torch.FloatTensor)))
-            # standard_q = torch.sub(cur_radar_data['radar_q'], torch.mean(cur_radar_data['radar_q'].type(torch.FloatTensor)))
+
             radar_data['radar_i'] = torch.cat((radar_data['radar_i'], cur_radar_data['radar_i']))
             radar_data['radar_q'] = torch.cat((radar_data['radar_q'], cur_radar_data['radar_q']))
             radar_data['tfm_ecg1'] = torch.cat((radar_data['tfm_ecg1'], torch.Tensor(cur_radar_data['tfm_ecg1'])))
                                                                         # pd.Series(cur_radar_data['tfm_ecg1'] #*10
                                                                         # .reshape(len(cur_radar_data['tfm_ecg1'])))
-                                                                        # .rolling(4).mean()))) #if smoothing after sampling (but this produces more noise)
+                                                                        # .rolling(4).mean()))) #if smoothing after sampling (but this leaves more noise)
             
             
 
@@ -143,41 +140,26 @@ class MyDataset(data.Dataset):
 
 
         #radar_data = self.extract_samples(radar_data)
-
         
 
         data_i = radar_data['radar_i']
-        data_q = radar_data['radar_q'] #need to figure out how they combined i and q
+        data_q = radar_data['radar_q']
         data_ecg = radar_data['tfm_ecg1']
-        #print(min(file_dict['tfm_ecg1']),)
         
         # plt.plot(data_i[6144:7168]/5, color = 'orange') #1024 for 5 seconds = 205 points per second (original was 2000 per second)
-        plt.plot(data_q[3000:7000]/5, color = 'purple') #they might just be using data_q?
-        # plt.plot(data_i[6144:7168]+data_q[6144:7168]/5, color = 'pink')
-        # plt.plot(data_i[6144:7168]*data_q[6144:7168]/5, color = 'green')
-        # plt.plot(data_i[6144:7168]+data_q[6144:7168]/5*data_i[6144:7168]*data_q[6144:7168], color = 'blue')
-        # plt.plot(data_i[6144:7168]*data_q[6144:7168]/5*data_i[6144:7168]+data_q[6144:7168], color = 'red')
-        plt.plot(data_ecg[3000:7000]) #7 7th window of 5 seconds 0-32000 1024*6 = 6144
-        plt.show()  
+        # plt.plot(data_q[6144:7168]/5, color = 'purple') #they might just be using data_q?
+        # # plt.plot(data_i[6144:7168]+data_q[6144:7168]/5, color = 'pink')
+        # # plt.plot(data_i[6144:7168]*data_q[6144:7168]/5, color = 'green')
+        # # plt.plot(data_i[6144:7168]+data_q[6144:7168]/5*data_i[6144:7168]*data_q[6144:7168], color = 'blue')
+        # # plt.plot(data_i[6144:7168]*data_q[6144:7168]/5*data_i[6144:7168]+data_q[6144:7168], color = 'red')
+        # plt.plot(data_ecg[6144:7168], color = 'black') #7 7th window of 5 seconds 0-32000 1024*6 = 6144
+        # #plt.plot(modwt(data_q, 'sym4', 1)/5, color = 'yellow')
+        # plt.show()  
 
         # print(torch.mean(torch.FloatTensor(data_i)))
 
-        len_data = len(data_i)
+        len_data = (len(data_i),)
         ##print(f'Number of files = {len(files)}. Data length = {len_data}.')
-
-        target_data_shape = (int(len_data/self.window_samples), int(self.window_samples))
-        #target_data_shape = (int(len_data/self.window_size), int(self.window_samples))
-        required_elements = target_data_shape[0] * target_data_shape[1]
-        # print(f'target_data_shape {target_data_shape}')
-        # print(f'required_elements {required_elements}')
-        # print(f'len_data {len_data}')
-
-        self.data_i = torch.reshape(data_i[0:required_elements], target_data_shape)
-        self.data_q = torch.reshape(data_q[0:required_elements], target_data_shape)
-        # resting_label = 0
-        # apnea_label = 1
-        # mixed_label = 2
-        # labels2 = torch.reshape(labels[0:required_elements], target_data_shape)
-        # labels3 = [resting_label if np.mean(list(window_labels)) > 1.5 else apnea_label for window_labels in labels2] #tried many things with pytorch
-
-        self.data_ecg = torch.reshape(data_ecg[0:required_elements], target_data_shape)
+        self.data_i = torch.reshape(data_i, len_data)
+        self.data_q = torch.reshape(data_q, len_data)
+        self.data_ecg = torch.reshape(data_ecg, len_data)
