@@ -75,5 +75,3 @@ class MatildaNet(nn.Module):
 # y = model(x)
 #print(y)
 
-#is there a way to set expected output to ecg?
-

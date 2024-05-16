@@ -15,7 +15,7 @@ example_ds = MyDataset(root="./", name="Radar", train=True, window_size=WINDOW_S
 	window_samples=WINDOW_SAMPLES, device=device, seed=SEED)
 train_ld = data.DataLoader(example_ds, batch_size=BATCH_SIZE)
 
-print(example_ds[0:10000][0])
+
 # for samples_i, samples_q, samples_ecg in train_ld:
 #     # samples_i = samples_i.to(device)
 #     # samples_q = samples_q.to(device)
@@ -37,23 +37,65 @@ print(example_ds[0:10000][0])
 # plt.plot(np_y[1000:2000])
 # plt.show()
 
-# ######
-# def train(train_loader, model, criterion, optimizer, device):
-#     model.train()
-#     for batch_idx, data_i, data_q, target in enumerate(train_loader):
-#         data, target = data_i.to(device), target.to(device)
-#         optimizer.zero_grad()
-#         output = model(data)
-#         loss = criterion(output, target)
-#         loss.backward()
-#         optimizer.step()
+def train_model(model, X, y, optimizer, criterion, chunk_size=1024, epochs=10):
+    model.train()
+    ps_list = np.zeros((X.shape[1],))
+    print(X.shape[1]) ###################
+    for epoch in range(epochs):
+        running_loss = 0.0
+        for i in range(X.shape[1] - chunk_size + 1):  # Slide the window over the entire sequence
+            optimizer.zero_grad()
 
-# criterion = torch.nn.MSELoss()
-# criterion.to(device)
-# optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
-# scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[150, 250, 350], gamma=.1)
+            # Get the chunk of input data
+            inputs = torch.tensor(X[:, i:i + chunk_size], dtype=torch.float32).to(device).clone().detach()
 
-# for epoch in range(1, args.epochs+1):
-#     train(train_ld, MatildaNet, criterion, optimizer, device)
-#     scheduler.step()
-# #####
+            # Forward pass
+            output = model(inputs)
+
+            # Get the corresponding target value (the entire sequence in the window)
+            target = torch.tensor(y[i], dtype=torch.float32).to(device).clone().detach()
+
+            # Compute the loss
+            loss = criterion(output, target)
+
+            # Backward pass and optimize
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+
+            # Store outputs in ps_list
+            outputs_np = outputs.squeeze().detach().cpu().numpy()
+            ps_list[i:i + chunk_size] = outputs_np
+
+        print(f"Epoch {epoch + 1}, Loss: {running_loss:.4f}")
+
+    return ps_list
+
+# Generate sample data
+X = example_ds[5000:7048][0].reshape((1, 7048))  
+y = example_ds[5000:7048][2].reshape((1, 7048))  
+
+# Instantiate model, optimizer, and criterion
+model = MatildaNet().to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+criterion = nn.MSELoss()
+
+# Train the model and get predicted values
+ps_list = train_model(model, X, y, optimizer, criterion)
+
+# Save actual array X and predicted values ps to text files
+np.savetxt('actual_array_X.txt', X.flatten())
+np.savetxt('predicted_values_ps.txt', ps_list)
+
+# Plot the actual input and the sequence of predicted values
+plt.figure(figsize=(10, 5))
+plt.plot(np.arange(len(X.flatten())), X.flatten(), label='Actual X')
+plt.plot(np.arange(len(y.flatten())), y.flatten(), label='Actual y')
+plt.plot(np.arange(len(ps_list)), ps_list, label='Predicted ps')
+plt.xlabel('Time')
+plt.ylabel('Value')
+plt.title('Actual Array X and Predicted Values ps')
+plt.legend()
+plt.savefig('predicted_values_plot.png')  # Save the plot
+plt.show()
