@@ -2,6 +2,18 @@ import torch
 import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
+from dataset import MyDataset
+from torch.utils import data
+
+WINDOW_SIZE = 10000 # 5 seconds
+WINDOW_SAMPLES = 1024 # points
+SEED = 0
+BATCH_SIZE = 20
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+example_ds = MyDataset(root="./", name="Radar", train=True, window_size=WINDOW_SIZE, 
+    window_samples=WINDOW_SAMPLES, device=device, seed=SEED)
+train_ld = data.DataLoader(example_ds, batch_size=BATCH_SIZE)
 
 class MatildaNet(nn.Module):
     def __init__(self):
@@ -79,8 +91,11 @@ def train_model(model, X, y, optimizer, criterion, chunk_size=1024, epochs=10):
 
 
 # Generate sample data
-X = np.random.randn(1, 1024)  # Example input data representing one sample
-y = np.random.randn(1024)  # Example target data for one sample
+X = example_ds[5000:6024][0].reshape((1,1024))  # Example input data representing one sample
+y = example_ds[5000:6024][2]  # Example target data for one sample
+# plt.plot(example_ds[:][0])
+# plt.plot(X)
+# plt.show()
 
 # Instantiate model, optimizer, and criterion
 model = MatildaNet()
@@ -97,6 +112,7 @@ np.savetxt('predicted_values_ps.txt', ps_list)
 # Plot the actual input and the sequence of predicted values
 plt.figure(figsize=(10, 5))
 plt.plot(np.arange(len(X.flatten())), X.flatten(), label='Actual X')
+plt.plot(np.arange(len(y.flatten())), y.flatten(), label='Actual y')
 plt.plot(np.arange(len(ps_list)), ps_list, label='Predicted ps')
 plt.xlabel('Time')
 plt.ylabel('Value')
