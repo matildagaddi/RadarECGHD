@@ -31,6 +31,7 @@ class MatildaNet(nn.Module):
 
 
        self.layers = nn.Sequential(
+        #need to add modwt
            nn.Conv1d(in_channels=1, out_channels=3, kernel_size=4, stride=1, padding=0),
            nn.Conv1d(in_channels=3, out_channels=8, kernel_size=64, stride=8, padding=0),
            nn.BatchNorm1d(8),

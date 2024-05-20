@@ -17,28 +17,9 @@ example_ds = MyDataset(root="./", name="Radar", train=True, window_size=WINDOW_S
 train_ld = data.DataLoader(example_ds, batch_size=BATCH_SIZE)
 
 
-# for samples_i, samples_q, samples_ecg in train_ld:
-#     # samples_i = samples_i.to(device)
-#     # samples_q = samples_q.to(device)
-#     # samples_ecg = samples_ecg.to(device)
-#     print("NEW", samples_i.shape, samples_q.shape, samples_ecg.shape) #size [20] bc of batch size
-
-
-# out = torch.Tensor()
-# for i in range(10000): #might want to parallelize #len(example_ds)-WINDOW_SAMPLES
-# 	x = example_ds.data_i[i:i+WINDOW_SAMPLES].reshape((1,1024))
-# 	model = MatildaNet()
-# 	y = model(x)
-
-# 	out = torch.cat((out, y))
-
-# out = out.reshape((len(out),))
-# np_y = out.detach().numpy()
-# print(np_y)
-# plt.plot(np_y[1000:2000])
-# plt.show()
-
-def train_model(model, X, y, optimizer, criterion, chunk_size=1024, epochs=10):
+def train_model(model, X, y, optimizer, criterion, chunk_size=1024, epochs=50): 
+#how to add stopping threshold (if MSE < ___) or take weights of lowest MSE
+#also needs to be much faster
     model.train()
     ps_list = np.zeros((X.shape[1] - chunk_size + 1,))
     for epoch in range(epochs):
@@ -73,9 +54,7 @@ def train_model(model, X, y, optimizer, criterion, chunk_size=1024, epochs=10):
     return ps_list
 
 # Generate sample data
-# X = example_ds[5000:7048][0].reshape((1, 2048))  # Example input data representing one sample
-# y = example_ds[5000:7048][2].reshape((1, 2048))  # Ensure y is reshaped correctly
-X = example_ds[5000:7048][0].reshape((1, 2048))  # Example input data representing one sample
+X = example_ds[5000:7048][0].reshape((1, 2048))
 y = example_ds[5000:7048][2].reshape((1, 2048))
 
 # Instantiate model, optimizer, and criterion
@@ -84,7 +63,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = nn.MSELoss()
 
 # Train the model and get predicted values
-ps_list = train_model(model, X, y, optimizer, criterion)
+ps_list = train_model(model, X, y, optimizer, np.sqrt(criterion)) #matlab example uses RMSE down to .17 w/o wodwt, .10 w/ modwt
 
 # Save actual array X and predicted values ps to text files
 np.savetxt('actual_array_X.txt', X.flatten())
