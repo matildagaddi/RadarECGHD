@@ -63,7 +63,8 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = nn.MSELoss()
 
 # Train the model and get predicted values
-ps_list = train_model(model, X, y, optimizer, np.sqrt(criterion)) #matlab example uses RMSE down to .17 w/o wodwt, .10 w/ modwt
+ps_list = train_model(model, X, y, optimizer, criterion) #matlab example uses RMSE down to .17 w/o wodwt, .10 w/ modwt
+#ps_list[-1] = np.sqrt(ps_list[-1]) # I dont think this works (for RMSE)
 
 # Save actual array X and predicted values ps to text files
 np.savetxt('actual_array_X.txt', X.flatten())
