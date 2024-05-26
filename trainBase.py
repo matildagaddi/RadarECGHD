@@ -65,10 +65,9 @@ criterion = nn.MSELoss()
 # Train the model and get predicted values
 ps_list = train_model(model, X, y, optimizer, criterion) #matlab example uses RMSE down to .17 w/o wodwt, .10 w/ modwt
 #ps_list[-1] = np.sqrt(ps_list[-1]) # I dont think this works (for RMSE)
-
 # Save actual array X and predicted values ps to text files
-np.savetxt('actual_array_X.txt', X.flatten())
-np.savetxt('predicted_values_ps.txt', ps_list)
+np.savetxt('/results/actual_array_X.txt', X.flatten())
+np.savetxt('/results/predicted_values_ps.txt', ps_list)
 
 # Plot the actual input and the sequence of predicted values
 plt.figure(figsize=(10, 5))
@@ -79,5 +78,5 @@ plt.xlabel('Time')
 plt.ylabel('Value')
 plt.title('Actual Array X and Predicted Values ps')
 plt.legend()
-plt.savefig('predicted_values_plot.png')  # Save the plot
+plt.savefig('/results/predicted_values_plot.png')  # Save the plot
 plt.show()
