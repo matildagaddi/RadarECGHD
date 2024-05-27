@@ -19,9 +19,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using {} device".format(device))
 
 DIMENSIONS = 10000  # number of hypervector dimensions
-NUM_FEATURES = 1  # number of features in dataset # SHOULD THIS BE WINDOW SIZE? ############
 WINDOW_SIZE = 400 # out of 1024, 1 second is  # HOW TO MAKE WINDOW SLIDE
-WINDOW_SAMPLES = 1024 # points
+NUM_FEATURES = WINDOW_SIZE  #1 # number of features in dataset # SHOULD THIS BE WINDOW SIZE? ############
+#WINDOW_SAMPLES = 1024 # points
 BATCH_SIZE = 20
 
 train_ds = MyDataset(radar_path="/Users/matildagaddi/Documents/SEElab/DATASET/trainVal/radar/GDN0001_Resting_radar_1.mat", 
@@ -32,10 +32,10 @@ test_ds = MyDataset(radar_path="/Users/matildagaddi/Documents/SEElab/DATASET/tes
     device=device)
 
 # Get necessary statistics for data and target transform
-STD_DEVS = ds.data.std(0)
-MEANS = ds.data.mean(0)
-TARGET_STD = ds.target.std(0)
-TARGET_MEAN = ds.target.mean(0)
+STD_DEVS = train_ds.data.std(0)
+MEANS = train_ds.data.mean(0)
+TARGET_STD = train_ds.target.std(0)
+TARGET_MEAN = train_ds.target.mean(0)
 
 def transform(x):
     x = x - MEANS
@@ -55,7 +55,8 @@ train_ds.target_transform = target_transform
 test_ds.transform = transform
 test_ds.target_transform = target_transform
 
-train_dl = data.DataLoader(train_ds, batch_size=1)
+#maybe DataLoader has a sliding window option, but I'm not using it for now. Just using loop indexing
+train_dl = data.DataLoader(train_ds, batch_size=1) 
 test_dl = data.DataLoader(test_ds, batch_size=1)
 
 
@@ -66,10 +67,11 @@ class SingleModel(nn.Module):
 
         self.lr = 0.00001
         self.M = torch.zeros(1, DIMENSIONS) # why 1?
-        self.project = embeddings.Sinusoid(size, DIMENSIONS)
+        self.project2 = embeddings.Sinusoid(size, DIMENSIONS) #this should be 400 x 10000
+        print(num_classes, size)
 
     def encode(self, x):
-        sample_hv = self.project(x)
+        sample_hv = self.project2(x)
         return torchhd.hard_quantize(sample_hv)
 
     def model_update(self, x, y):
@@ -88,13 +90,16 @@ model = model.to(device)
 
 # Model training
 with torch.no_grad():
-    for _ in range(2):
-        for samples, extra_q, labels in tqdm(train_dl, desc="Iteration {}".format(_ + 1)):
+    for _ in range(10):
+        for i in tqdm(range(len(train_ds)-WINDOW_SIZE), desc="Iteration {}".format(_ + 1)):
+            samples = train_ds.data[i:i+WINDOW_SIZE]
+            label = train_ds.target[i+WINDOW_SIZE]
+
             samples = samples.to(device)
-            labels = labels.to(device)
+            label = label.to(device)
 
             samples_hv = model.encode(samples)
-            model.model_update(samples_hv, labels)
+            model.model_update(samples_hv, label)
 
 # Model accuracy
 mse = torchmetrics.MeanSquaredError()
@@ -104,16 +109,22 @@ labelsArr = np.array([])
 predictionsArr = np.array([])
 
 with torch.no_grad():
-    for samples, extra_q, labels in tqdm(test_dl, desc="Testing"):
+    for i in tqdm(range(len(test_ds)-WINDOW_SIZE), desc="Testing"):
+        samples = train_ds.data[i:i+WINDOW_SIZE]
+        label = train_ds.target[i+WINDOW_SIZE]
+
         samples = samples.to(device)
 
         predictions = model(samples)
         predictions = predictions * TARGET_STD + TARGET_MEAN
-        labels = labels * TARGET_STD + TARGET_MEAN
-        mse.update(predictions.cpu(), labels)
+        label = label * TARGET_STD + TARGET_MEAN
+        #label = torch.FloatTensor(label) #doesn't change 
+        label = torch.reshape(label, (1,))
+
+        mse.update(predictions.cpu(), label)
 
         samplesArr = np.append(samplesArr, samples)
-        labelsArr = np.append(labelsArr, labels)
+        labelsArr = np.append(labelsArr, label)
         predictionsArr = np.append(predictionsArr, predictions)
 
 

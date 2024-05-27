@@ -20,7 +20,6 @@ class MyDataset(data.Dataset):
         self.radar_path = radar_path
         self.ecg_path = ecg_path
         self.window_size = int(window_size)
-        self.window_samples = int(window_samples)
         self.device = device
         self.load_data()
 
@@ -71,8 +70,8 @@ class MyDataset(data.Dataset):
         myData = torch.FloatTensor( myData )
         myTarget = torch.FloatTensor( myTarget )
 
-        self.data = MyData
-        self.Target = myTarget
+        self.data = myData
+        self.target = myTarget
         
        #  # myData = torch.div( torch.sub(myData, torch.mean(myData)), torch.std(myData) )
 
