@@ -17,7 +17,7 @@ example_ds = MyDataset(root="./", name="Radar", train=True, window_size=WINDOW_S
 train_ld = data.DataLoader(example_ds, batch_size=BATCH_SIZE)
 
 
-def train_model(model, X, y, optimizer, criterion, chunk_size=1024, epochs=50): 
+def train_model(model, X, y, optimizer, criterion, chunk_size=WINDOW_SAMPLES, epochs=10): 
 #how to add stopping threshold (if MSE < ___) or take weights of lowest MSE
 #also needs to be much faster
     model.train()
@@ -66,17 +66,17 @@ criterion = nn.MSELoss()
 ps_list = train_model(model, X, y, optimizer, criterion) #matlab example uses RMSE down to .17 w/o wodwt, .10 w/ modwt
 #ps_list[-1] = np.sqrt(ps_list[-1]) # I dont think this works (for RMSE)
 # Save actual array X and predicted values ps to text files
-np.savetxt('/results/actual_array_X.txt', X.flatten())
-np.savetxt('/results/predicted_values_ps.txt', ps_list)
+np.savetxt('actual_array_X.txt', X.flatten())
+np.savetxt('predicted_values_ps.txt', ps_list)
 
 # Plot the actual input and the sequence of predicted values
 plt.figure(figsize=(10, 5))
 plt.plot(np.arange(len(X.flatten())), X.flatten(), label='Actual X')
 plt.plot(np.arange(len(y.flatten())), y.flatten(), label='Actual y')
-plt.plot(np.arange(len(ps_list))+1024, ps_list, label='Predicted ps')
+plt.plot(np.arange(len(ps_list))+WINDOW_SAMPLES, ps_list, label='Predicted ps')
 plt.xlabel('Time')
 plt.ylabel('Value')
 plt.title('Actual Array X and Predicted Values ps')
 plt.legend()
-plt.savefig('/results/predicted_values_plot.png')  # Save the plot
+plt.savefig('predicted_values_plot.png')  # Save the plot
 plt.show()

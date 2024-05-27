@@ -51,7 +51,7 @@ def train_model(model, X, y, optimizer, criterion, chunk_size=1024, epochs=50):
             outputs_np = outputs.squeeze().detach().cpu().numpy()
             ps_list = np.append(ps_list, outputs_np)
 
-        #print(f"Epoch {epoch + 1}, Loss: {running_loss:.4f}")
+        print(f"Epoch {epoch + 1}, Loss: {running_loss:.4f}")
 
     return ps_list
 
@@ -76,8 +76,8 @@ for radar, ecg in tqdm(train_ld):
     ps_list = np.append(ps_list, train_model(model, X, y, optimizer, criterion)) #matlab example uses RMSE down to .17 w/o wodwt, .10 w/ modwt
 
     # Save actual array X and predicted values ps to text files
-    np.savetxt('/results/actual_array_X.txt', X.flatten())
-    np.savetxt('/results/predicted_values_ps.txt', ps_list)
+    np.savetxt('actual_array_X.txt', X.flatten())
+    np.savetxt('predicted_values_ps.txt', ps_list)
 
 # Plot the actual input and the sequence of predicted values
 print(X.shape, y.shape, ps_list.shape) #torch.Size([10, 1024]) torch.Size([10, 1024]) (500,)

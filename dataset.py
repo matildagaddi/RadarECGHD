@@ -58,24 +58,24 @@ class MyDataset(data.Dataset):
     def load_data(self):
         # need to do 5 times, randomly assigning train and test, take average of accuracies
 
-        # all_files = [
-        # 'GDN0004/GDN0004_3_Apnea.mat','GDN0005/GDN0005_3_Apnea.mat', 
-        # 'GDN0006/GDN0006_3_Apnea.mat', 'GDN0007/GDN0007_3_Apnea.mat',
-        # 'GDN0008/GDN0008_3_Apnea.mat', 'GDN0009/GDN0009_3_Apnea.mat',
+        all_files = [
+        'GDN0004/GDN0004_3_Apnea.mat','GDN0005/GDN0005_3_Apnea.mat', 
+        'GDN0006/GDN0006_3_Apnea.mat', 'GDN0007/GDN0007_3_Apnea.mat',
+        'GDN0008/GDN0008_3_Apnea.mat', 'GDN0009/GDN0009_3_Apnea.mat',
 
-        # 'GDN0011/GDN0011_3_Apnea.mat', 'GDN0012/GDN0012_3_Apnea.mat',
-        # 'GDN0013/GDN0013_3_Apnea.mat', 'GDN0014/GDN0014_3_Apnea.mat',
-        # 'GDN0016/GDN0016_3_Apnea.mat', 'GDN0017/GDN0017_3_Apnea.mat',
-        # 'GDN0018/GDN0018_3_Apnea.mat', 
+        'GDN0011/GDN0011_3_Apnea.mat', 'GDN0012/GDN0012_3_Apnea.mat',
+        'GDN0013/GDN0013_3_Apnea.mat', 'GDN0014/GDN0014_3_Apnea.mat',
+        'GDN0016/GDN0016_3_Apnea.mat', 'GDN0017/GDN0017_3_Apnea.mat',
+        'GDN0018/GDN0018_3_Apnea.mat', 
 
-        # 'GDN0021/GDN0021_3_Apnea.mat', 'GDN0022/GDN0022_3_Apnea.mat', 
-        # 'GDN0023/GDN0023_3_Apnea.mat', 'GDN0025/GDN0025_3_Apnea.mat', 
-        # 'GDN0027/GDN0027_3_Apnea.mat', 'GDN0028/GDN0028_3_Apnea.mat',
+        'GDN0021/GDN0021_3_Apnea.mat', 'GDN0022/GDN0022_3_Apnea.mat', 
+        'GDN0023/GDN0023_3_Apnea.mat', 'GDN0025/GDN0025_3_Apnea.mat', 
+        'GDN0027/GDN0027_3_Apnea.mat', 'GDN0028/GDN0028_3_Apnea.mat',
 
-        # 'GDN0010/GDN0010_3_Apnea.mat', 
-        # 'GDN0019/GDN0019_3_Apnea.mat', 'GDN0020/GDN0020_3_Apnea.mat', #20 has weird jumps
-        # 'GDN0029/GDN0029_3_Apnea.mat','GDN0030/GDN0030_3_Apnea.mat'
-        # ]
+        'GDN0010/GDN0010_3_Apnea.mat', 
+        'GDN0019/GDN0019_3_Apnea.mat', 'GDN0020/GDN0020_3_Apnea.mat', #20 has weird jumps
+        'GDN0029/GDN0029_3_Apnea.mat','GDN0030/GDN0030_3_Apnea.mat'
+        ]
 
         # np.random.seed(seed = self.seed) 
         # percent80 = int(np.floor(len(all_files)*.8))
@@ -111,9 +111,17 @@ class MyDataset(data.Dataset):
 
         def process_data(file, radar_data): 
             file_dict = loadmat(path+file) #loads dictionary 
-            cur_radar_data = {'radar_i': file_dict['radar_i'], 'radar_q': file_dict['radar_q'], 
-            'tfm_ecg1': pd.Series(file_dict['tfm_ecg1'].reshape(len(file_dict['tfm_ecg1']))).rolling(40).mean()}
+            
+            cur_radar_data = {'radar_i': file_dict['radar_i'][39:], 'radar_q': file_dict['radar_q'][39:], 
+            'tfm_ecg1': torch.FloatTensor(pd.Series(file_dict['tfm_ecg1'].reshape(len(file_dict['tfm_ecg1']))).rolling(40).mean())[39:]} #causing nan in first 40
             #ecg not smoothed, need to take mean of nearest points (40: phase length before sampling), ecg2 is an amplified version?
+            
+            # print('middle 0 ', cur_radar_data['tfm_ecg1'])
+            # print('middle 0 37', cur_radar_data['tfm_ecg1'][37]) #nan
+            # print('middle 0 38', cur_radar_data['tfm_ecg1'][38]) #nan
+            # print('middle 0 39', cur_radar_data['tfm_ecg1'][39]) #number
+            # print('middle 0 40', cur_radar_data['tfm_ecg1'][40]) #number
+
             for k in cur_radar_data.keys():
                 cur_radar_data[k] = cur_radar_data[k][:((len(cur_radar_data[k])//self.window_size)*self.window_size):step_for_samples] #cut off extra data #take only sample of window
 
@@ -128,6 +136,7 @@ class MyDataset(data.Dataset):
             radar_data['radar_i'] = torch.cat((radar_data['radar_i'], cur_radar_data['radar_i']))
             radar_data['radar_q'] = torch.cat((radar_data['radar_q'], cur_radar_data['radar_q']))
             radar_data['tfm_ecg1'] = torch.cat((radar_data['tfm_ecg1'], torch.Tensor(cur_radar_data['tfm_ecg1'])))
+
                                                                         # pd.Series(cur_radar_data['tfm_ecg1'] #*10
                                                                         # .reshape(len(cur_radar_data['tfm_ecg1'])))
                                                                         # .rolling(4).mean()))) #if smoothing after sampling (but this leaves more noise)
@@ -152,7 +161,7 @@ class MyDataset(data.Dataset):
 
         data_i = radar_data['radar_i']
         data_q = radar_data['radar_q']
-        data_ecg = radar_data['tfm_ecg1']
+        data_ecg = radar_data['tfm_ecg1'] #first values nan?
         
         # plt.plot(data_i[6144:7168]/5, color = 'orange') #1024 for 5 seconds = 205 points per second (original was 2000 per second)
         # plt.plot(data_q[6144:7168]/5, color = 'purple') #they might just be using data_q?

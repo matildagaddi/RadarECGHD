@@ -8,8 +8,8 @@ from exp import ExpARHD, ExpSeq2SeqHD
 def main():
     parser = argparse.ArgumentParser(description="[Informer] Long Sequences Forecasting")
     parser.add_argument("--data", type=str, required=True, default="ETTh1", help="data")
-    parser.add_argument("--root_path", type=str, default="/Users/matildagaddi/Documents/SEElab/DATASET/trainVal/", help="root path of the data file")
-    parser.add_argument("--data_path", type=str, default="radar/GDN0001_Resting_radar_6.mat", help="data file")
+    parser.add_argument("--root_path", type=str, default="/Users/matildagaddi/Documents/SEElab/apnea_dataset/", help="root path of the data file")
+    parser.add_argument("--data_path", type=str, default="GDN0006/GDN0006_3_Apnea.mat", help="data file")
     parser.add_argument("--target", type=str, default="OT", help="target feature in S or MS task")
     parser.add_argument("--freq", type=str, default="h", help="freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h")
     parser.add_argument("--seq_len", type=int, default=400, help="input sequence length of Informer encoder")
@@ -34,8 +34,8 @@ def main():
 
     args = parser.parse_args()
 
-    training_files = []
-    testing_files = []
+    training_files = ['GDN0006/GDN0006_3_Apnea.mat']
+    testing_files = ['GDN0006/GDN0006_3_Apnea.mat']
 
     args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
     if args.use_gpu and args.use_multi_gpu:
