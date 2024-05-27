@@ -14,6 +14,7 @@ from torchhd import embeddings
 from dataset2 import MyDataset
 import matplotlib.pyplot as plt
 import numpy as np
+import datetime
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using {} device".format(device))
@@ -23,6 +24,11 @@ WINDOW_SIZE = 400 # out of 1024, 1 second is  # HOW TO MAKE WINDOW SLIDE
 NUM_FEATURES = WINDOW_SIZE  #1 # number of features in dataset # SHOULD THIS BE WINDOW SIZE? ############
 #WINDOW_SAMPLES = 1024 # points
 BATCH_SIZE = 20
+LEARN_RATE = 0.0001 #OG 0.00001 #could implement a decreasing schedule
+TRAIN_ITERS = 100
+
+print('hyperparameters: lr: ', LEARN_RATE, ' train iters: ', TRAIN_ITERS)
+
 
 train_ds = MyDataset(radar_path="/Users/matildagaddi/Documents/SEElab/DATASET/trainVal/radar/GDN0001_Resting_radar_1.mat", 
     ecg_path="/Users/matildagaddi/Documents/SEElab/DATASET/trainVal/ecg/GDN0001_Resting_ecg_1.mat", window_size=WINDOW_SIZE,
@@ -65,10 +71,9 @@ class SingleModel(nn.Module):
     def __init__(self, num_classes, size):
         super(SingleModel, self).__init__()
 
-        self.lr = 0.00001
-        self.M = torch.zeros(1, DIMENSIONS) # why 1?
-        self.project2 = embeddings.Sinusoid(size, DIMENSIONS) #this should be 400 x 10000
-        print(num_classes, size)
+        self.lr = LEARN_RATE
+        self.M = torch.zeros(1, DIMENSIONS)
+        self.project2 = embeddings.Sinusoid(size, DIMENSIONS)
 
     def encode(self, x):
         sample_hv = self.project2(x)
@@ -90,8 +95,9 @@ model = model.to(device)
 
 # Model training
 with torch.no_grad():
-    for _ in range(10):
+    for _ in range(TRAIN_ITERS):
         for i in tqdm(range(len(train_ds)-WINDOW_SIZE), desc="Iteration {}".format(_ + 1)):
+            #sliding window
             samples = train_ds.data[i:i+WINDOW_SIZE]
             label = train_ds.target[i+WINDOW_SIZE]
 
@@ -129,7 +135,7 @@ with torch.no_grad():
 
 
 print(f"Testing mean squared error of {(mse.compute().item()):.20f}")
-print(len(samplesArr), len(labelsArr), len(predictionsArr))
+#print(len(samplesArr), len(labelsArr), len(predictionsArr))
 plt.plot(np.arange(len(samplesArr.flatten())), samplesArr.flatten(), label='Actual X')
 plt.title('radar data')
 plt.show()
@@ -137,5 +143,6 @@ plt.plot(np.arange(len(labelsArr.flatten())), labelsArr.flatten(), label='Actual
 plt.title('ecg target')
 plt.show()
 plt.plot(np.arange(len(predictionsArr)), predictionsArr, label='Predicted ps')
-plt.title('predicted data')
+plt.title(f'Predicted Data - train iters {TRAIN_ITERS}, learn rate: {LEARN_RATE}, MSE: {(mse.compute().item()):.10f}')
+plt.savefig(f'Pred_l{LEARN_RATE}_i{TRAIN_ITERS}_{datetime.datetime.now()}.png') #find how to save into folder
 plt.show()
