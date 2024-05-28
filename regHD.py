@@ -24,7 +24,8 @@ WINDOW_SIZE = 400 # out of 1024, 1 second is  # HOW TO MAKE WINDOW SLIDE
 NUM_FEATURES = WINDOW_SIZE  #1 # number of features in dataset # SHOULD THIS BE WINDOW SIZE? ############
 #WINDOW_SAMPLES = 1024 # points
 BATCH_SIZE = 20
-LEARN_RATE = 0.0001 #OG 0.00001 #could implement a decreasing schedule
+LEARN_RATE = 0.0001 #could implement a decreasing schedule #0.0003 explodes 
+#lower learn rate better, maybe use early stopping or fewer iterations, prevent overfitting?
 TRAIN_ITERS = 100
 
 print('hyperparameters: lr: ', LEARN_RATE, ' train iters: ', TRAIN_ITERS)
@@ -107,6 +108,8 @@ with torch.no_grad():
             samples_hv = model.encode(samples)
             model.model_update(samples_hv, label)
 
+train_time = 0 #set up later
+
 # Model accuracy
 mse = torchmetrics.MeanSquaredError()
 
@@ -136,13 +139,13 @@ with torch.no_grad():
 
 print(f"Testing mean squared error of {(mse.compute().item()):.20f}")
 #print(len(samplesArr), len(labelsArr), len(predictionsArr))
-plt.plot(np.arange(len(samplesArr.flatten())), samplesArr.flatten(), label='Actual X')
-plt.title('radar data')
-plt.show()
-plt.plot(np.arange(len(labelsArr.flatten())), labelsArr.flatten(), label='Actual y')
+# plt.plot(np.arange(len(samplesArr.flatten())), samplesArr.flatten(), label='Actual X')
+# plt.title('radar data')
+# plt.show()
+plt.plot(np.arange(len(labelsArr.flatten())), labelsArr.flatten(), label='Actual', color='green')
 plt.title('ecg target')
-plt.show()
-plt.plot(np.arange(len(predictionsArr)), predictionsArr, label='Predicted ps')
-plt.title(f'Predicted Data - train iters {TRAIN_ITERS}, learn rate: {LEARN_RATE}, MSE: {(mse.compute().item()):.10f}')
-plt.savefig(f'Pred_l{LEARN_RATE}_i{TRAIN_ITERS}_{datetime.datetime.now()}.png') #find how to save into folder
+plt.plot(np.arange(len(predictionsArr)), predictionsArr, label='Predicted', color='purple')
+plt.title(f'Predicted ECG- iters:{TRAIN_ITERS}, LR:{LEARN_RATE}, MSE:{(mse.compute().item()):.10f}, time:{train_time}, window:{WINDOW_SIZE}')
+plt.legend()
+plt.savefig(f'Pred_i{TRAIN_ITERS}_{datetime.datetime.now()}.png') #find how to save into folder
 plt.show()
