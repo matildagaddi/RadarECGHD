@@ -19,25 +19,44 @@ import datetime
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using {} device".format(device))
 
+
+### hyperparameter tuning ###
+# train_iters = [100] #30, 50
+# window_sizes = [400, 500, 600]
+# lrs = [0.00003, 0.000035] # try [0.000005, 0.00001, 0.00002, 0.00003] 
+#     #best to worst so far MSE, but first spikes not tall enough, 2nd spikes better but rest messy, 4th spikes too high
+#     #want 1st one with spikes of 2nd one
+
+# MSEs = []
+
+# for ti in train_iters:
+#     for ws in window_sizes:
+#         print(MSEs)
+#         for lr in lrs:
+
 DIMENSIONS = 10000  # number of hypervector dimensions
 WINDOW_SIZE = 400 # out of 1024, 1 second is  # HOW TO MAKE WINDOW SLIDE
 NUM_FEATURES = WINDOW_SIZE  #1 # number of features in dataset # SHOULD THIS BE WINDOW SIZE? ############
 #WINDOW_SAMPLES = 1024 # points
 BATCH_SIZE = 20
-LEARN_RATE = 0.0001 #could implement a decreasing schedule #0.0003 explodes 
+LEARN_RATE = 0.00003 #could implement a decreasing schedule #0.0003 explodes 
 #lower learn rate better, maybe use early stopping or fewer iterations, prevent overfitting?
-TRAIN_ITERS = 100
+TRAIN_ITERS = 30
+train_file_r= 'trainVal/radar/GDN0001_Resting_radar_1.mat'
+train_file_e= 'trainVal/ecg/GDN0001_Resting_ecg_1.mat'
+test_file_r= 'trainVal/radar/GDN0001_Resting_radar_2.mat'
+test_file_e= 'trainVal/ecg/GDN0001_Resting_ecg_2.mat'
+path_to_DS = '/Users/matildagaddi/Documents/SEElab'
 
-print('hyperparameters: lr: ', LEARN_RATE, ' train iters: ', TRAIN_ITERS)
+print('hyperparameters: ti: ', TRAIN_ITERS, ' ws: ', WINDOW_SIZE, ' lr: ', LEARN_RATE)
 
 
-train_ds = MyDataset(radar_path="/Users/matildagaddi/Documents/SEElab/DATASET/trainVal/radar/GDN0001_Resting_radar_1.mat", 
-    ecg_path="/Users/matildagaddi/Documents/SEElab/DATASET/trainVal/ecg/GDN0001_Resting_ecg_1.mat", window_size=WINDOW_SIZE,
+train_ds = MyDataset(radar_path=f"{path_to_DS}/DATASET/{train_file_r}",
+    ecg_path=f"{path_to_DS}/DATASET/{train_file_e}", window_size=WINDOW_SIZE,
     device=device)
-test_ds = MyDataset(radar_path="/Users/matildagaddi/Documents/SEElab/DATASET/test/radar/GDN0006_Apnea_radar_1.mat", 
-    ecg_path="/Users/matildagaddi/Documents/SEElab/DATASET/test/ecg/GDN0006_Apnea_ecg_1.mat", window_size=WINDOW_SIZE,
+test_ds = MyDataset(radar_path=f"{path_to_DS}/DATASET/{test_file_r}", 
+    ecg_path=f"{path_to_DS}/DATASET/{test_file_e}", window_size=WINDOW_SIZE,
     device=device)
-
 # Get necessary statistics for data and target transform
 STD_DEVS = train_ds.data.std(0)
 MEANS = train_ds.data.mean(0)
@@ -94,6 +113,7 @@ class SingleModel(nn.Module):
 model = SingleModel(1, NUM_FEATURES)
 model = model.to(device)
 
+trainSamplesArr = np.array([])
 # Model training
 with torch.no_grad():
     for _ in range(TRAIN_ITERS):
@@ -108,6 +128,8 @@ with torch.no_grad():
             samples_hv = model.encode(samples)
             model.model_update(samples_hv, label)
 
+            trainSamplesArr = np.append(trainSamplesArr, samples)
+
 train_time = 0 #set up later
 
 # Model accuracy
@@ -117,17 +139,17 @@ samplesArr = np.array([])
 labelsArr = np.array([])
 predictionsArr = np.array([])
 
+# Model testing 
 with torch.no_grad():
     for i in tqdm(range(len(test_ds)-WINDOW_SIZE), desc="Testing"):
-        samples = train_ds.data[i:i+WINDOW_SIZE]
-        label = train_ds.target[i+WINDOW_SIZE]
+        samples = test_ds.data[i:i+WINDOW_SIZE]
+        label = test_ds.target[i+WINDOW_SIZE]
 
         samples = samples.to(device)
 
         predictions = model(samples)
         predictions = predictions * TARGET_STD + TARGET_MEAN
         label = label * TARGET_STD + TARGET_MEAN
-        #label = torch.FloatTensor(label) #doesn't change 
         label = torch.reshape(label, (1,))
 
         mse.update(predictions.cpu(), label)
@@ -138,14 +160,18 @@ with torch.no_grad():
 
 
 print(f"Testing mean squared error of {(mse.compute().item()):.20f}")
+### MSEs.append([f'{(mse.compute().item()):.10f}', lr, ws, ti]) ### HP Tuning
 #print(len(samplesArr), len(labelsArr), len(predictionsArr))
-# plt.plot(np.arange(len(samplesArr.flatten())), samplesArr.flatten(), label='Actual X')
+# plt.plot(np.arange(len(samplesArr.flatten())), samplesArr.flatten(), label='test radar', alpha=0.5)
+# plt.plot(np.arange(len(trainSamplesArr.flatten())), trainSamplesArr.flatten(), label='train radar', alpha=0.5)
 # plt.title('radar data')
+# plt.legend()
 # plt.show()
-plt.plot(np.arange(len(labelsArr.flatten())), labelsArr.flatten(), label='Actual', color='green')
-plt.title('ecg target')
-plt.plot(np.arange(len(predictionsArr)), predictionsArr, label='Predicted', color='purple')
-plt.title(f'Predicted ECG- iters:{TRAIN_ITERS}, LR:{LEARN_RATE}, MSE:{(mse.compute().item()):.10f}, time:{train_time}, window:{WINDOW_SIZE}')
+
+plt.figure(figsize=(10, 5))
+plt.plot(np.arange(len(labelsArr.flatten())), labelsArr.flatten(), label='Actual', color='blue')
+plt.plot(np.arange(len(predictionsArr)), predictionsArr, label='Predicted', color='red')
+plt.title(f'Predicted ECG- iters:{TRAIN_ITERS}, LR:{LEARN_RATE}, window:{WINDOW_SIZE}- MSE:{(mse.compute().item()):.10f}, {test_file_r}')
 plt.legend()
-plt.savefig(f'Pred_i{TRAIN_ITERS}_{datetime.datetime.now()}.png') #find how to save into folder
-plt.show()
+plt.savefig(f'Pred_MSE{(mse.compute().item()):.8f}_{datetime.datetime.now()}.png') #find how to save into folder
+plt.clf()
