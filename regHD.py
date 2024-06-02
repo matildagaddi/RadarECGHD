@@ -35,11 +35,11 @@ print("Using {} device".format(device))
 #         for lr in lrs:
 
 DIMENSIONS = 10000  # number of hypervector dimensions
-WINDOW_SIZE = 400 # out of 1024, 1 second is  # HOW TO MAKE WINDOW SLIDE
-NUM_FEATURES = WINDOW_SIZE  #1 # number of features in dataset # SHOULD THIS BE WINDOW SIZE? ############
+WINDOW_SIZE = 400 
+NUM_FEATURES = WINDOW_SIZE  
 #WINDOW_SAMPLES = 1024 # points
 BATCH_SIZE = 20
-LEARN_RATE = 0.00003 #could implement a decreasing schedule #0.0003 explodes 
+LEARN_RATE = 0.00003 
 #lower learn rate better, maybe use early stopping or fewer iterations, prevent overfitting?
 TRAIN_ITERS = 30
 train_file_r= 'trainVal/radar/GDN0001_Resting_radar_1.mat'
@@ -81,7 +81,7 @@ train_ds.target_transform = target_transform
 test_ds.transform = transform
 test_ds.target_transform = target_transform
 
-#maybe DataLoader has a sliding window option, but I'm not using it for now. Just using loop indexing
+#maybe DataLoader has a sliding window option, but I'm not using it for now. Just using loop indexing later
 train_dl = data.DataLoader(train_ds, batch_size=1) 
 test_dl = data.DataLoader(test_ds, batch_size=1)
 

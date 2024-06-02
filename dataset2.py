@@ -34,6 +34,9 @@ class MyDataset(data.Dataset):
     def load_data(self):
         myData = None
         myTarget = None
+
+        ### just looking at one file at a time currently ###
+        
         #for filename in os.listdir(self.radar_path): #just do one file at a time
         #f = os.path.join(self.radar_path, filename)
         fr = self.radar_path
