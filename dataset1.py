@@ -148,7 +148,7 @@ class MyDataset(data.Dataset):
             files = ['GDN0006/GDN0006_3_Apnea.mat']#rand_train_files
             ##print('loading training data')
         else:
-            files = rand_test_files
+            files = ['GDN0006/GDN0006_3_Apnea.mat']#rand_test_files
             ##print('loading testing data')
 
 
