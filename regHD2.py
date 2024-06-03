@@ -141,9 +141,9 @@ predictionsArr = np.array([])
 
 # Model testing 
 with torch.no_grad():
-    for i in tqdm(range(len(test_ds)-WINDOW_SIZE), desc="Testing"):
-        samples = test_ds.data[i:i+WINDOW_SIZE]
-        label = test_ds.target[i+WINDOW_SIZE]
+    for i in tqdm(range(len(test_ds)-WINDOW_SIZE), desc="Testing"): #####test
+        samples = test_ds.data[i:i+WINDOW_SIZE] #####test
+        label = test_ds.target[i+WINDOW_SIZE] #####test
 
         samples = samples.to(device)
 
