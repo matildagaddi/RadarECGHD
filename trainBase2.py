@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils import data
 from dataset2 import MyDataset
-from FatemehNet import MatildaNet
+from MatildaNet import MatildaNet
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
@@ -12,11 +12,20 @@ WINDOW_SAMPLES = 1024 # points
 SEED = 0
 BATCH_SIZE = 20
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+train_file_r= 'trainVal/radar/GDN0001_Resting_radar_1.mat'
+train_file_e= 'trainVal/ecg/GDN0001_Resting_ecg_1.mat'
+test_file_r= 'trainVal/radar/GDN0001_Resting_radar_2.mat'
+test_file_e= 'trainVal/ecg/GDN0001_Resting_ecg_2.mat'
+path_to_DS = '/Users/matildagaddi/Documents/SEElab'
 
-train_ds = MyDataset(radar_path="/Users/matildagaddi/Documents/SEElab/DATASET/trainVal/radar", ecg_path="/Users/matildagaddi/Documents/SEElab/DATASET/trainVal/ecg", window_size=WINDOW_SIZE, window_samples=WINDOW_SAMPLES, device=device)
+train_ds = MyDataset(radar_path=f"{path_to_DS}/DATASET/{train_file_r}",
+    ecg_path=f"{path_to_DS}/DATASET/{train_file_e}", window_size=WINDOW_SIZE,
+    device=device)
+test_ds = MyDataset(radar_path=f"{path_to_DS}/DATASET/{test_file_r}", 
+    ecg_path=f"{path_to_DS}/DATASET/{test_file_e}", window_size=WINDOW_SIZE,
+    device=device)
+
 train_ld = data.DataLoader(train_ds, batch_size=BATCH_SIZE)
-
-test_ds = MyDataset(radar_path="/Users/matildagaddi/Documents/SEElab/DATASET/test/radar", ecg_path="/Users/matildagaddi/Documents/SEElab/DATASET/test/ecg", window_size=WINDOW_SIZE, window_samples=WINDOW_SAMPLES, device=device)
 test_ld = data.DataLoader(test_ds, batch_size=BATCH_SIZE)
 
 def train_model(model, X, y, optimizer, criterion, chunk_size=1024, epochs=50): 

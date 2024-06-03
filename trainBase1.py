@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 from torch.utils import data
-from dataset import MyDataset
-from FatemehNet import MatildaNet
+from dataset1 import MyDataset
+from MatildaNet import MatildaNet
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -10,6 +10,7 @@ WINDOW_SIZE = 10000 # 5 seconds
 WINDOW_SAMPLES = 1024 # points
 SEED = 0
 BATCH_SIZE = 20
+EPOCS = 10
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 example_ds = MyDataset(root="./", name="Radar", train=True, window_size=WINDOW_SIZE, 
@@ -17,7 +18,7 @@ example_ds = MyDataset(root="./", name="Radar", train=True, window_size=WINDOW_S
 train_ld = data.DataLoader(example_ds, batch_size=BATCH_SIZE)
 
 
-def train_model(model, X, y, optimizer, criterion, chunk_size=WINDOW_SAMPLES, epochs=10): 
+def train_model(model, X, y, optimizer, criterion, chunk_size=WINDOW_SAMPLES, epochs=EPOCS): 
 #how to add stopping threshold (if MSE < ___) or take weights of lowest MSE
 #also needs to be much faster
     model.train()
@@ -72,8 +73,8 @@ np.savetxt('predicted_values_ps.txt', ps_list)
 # Plot the actual input and the sequence of predicted values
 plt.figure(figsize=(10, 5))
 plt.plot(np.arange(len(X.flatten())), X.flatten(), label='Actual X')
-plt.plot(np.arange(len(y.flatten())), y.flatten(), label='Actual y')
-plt.plot(np.arange(len(ps_list))+WINDOW_SAMPLES, ps_list, label='Predicted ps')
+plt.plot(np.arange(len(y.flatten())), y.flatten()*3, label='Actual y') ## *3 to scale plot to be more visible
+plt.plot(np.arange(len(ps_list))+WINDOW_SAMPLES, ps_list*3, label='Predicted ps')
 plt.xlabel('Time')
 plt.ylabel('Value')
 plt.title('Actual Array X and Predicted Values ps')
