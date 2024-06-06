@@ -1,3 +1,4 @@
+## regHD2 multifile training
 
 import math
 import torch
@@ -11,7 +12,7 @@ from tqdm import tqdm
 
 import torchhd
 from torchhd import embeddings
-from dataset2 import MyDataset
+from dataset2multi import MyDataset
 import matplotlib.pyplot as plt
 import numpy as np
 import datetime
@@ -35,51 +36,49 @@ print("Using {} device".format(device))
 #         for lr in lrs:
 
 DIMENSIONS = 10000  # number of hypervector dimensions
-WINDOW_SIZE = 400 
+WINDOW_SIZE = 400
 NUM_FEATURES = WINDOW_SIZE  
 #WINDOW_SAMPLES = 1024 # points
 BATCH_SIZE = 20
 LEARN_RATE = 0.00003 
 #lower learn rate better, maybe use early stopping or fewer iterations, prevent overfitting?
-TRAIN_ITERS = 30
-train_file_r= 'trainVal/radar/GDN0001_Resting_radar_1.mat'
-train_file_e= 'trainVal/ecg/GDN0001_Resting_ecg_1.mat'
-test_file_r= 'trainVal/radar/GDN0001_Resting_radar_2.mat'
-test_file_e= 'trainVal/ecg/GDN0001_Resting_ecg_2.mat'
-path_to_DS = '/Users/matildagaddi/Documents/SEElab'
+TRAIN_ITERS = 10
+train_files_r= ['trainVal/radar/GDN0001_Resting_radar_1.mat','trainVal/radar/GDN0001_Resting_radar_2.mat','trainVal/radar/GDN0001_Resting_radar_3.mat']
+train_files_e= ['trainVal/ecg/GDN0001_Resting_ecg_1.mat','trainVal/ecg/GDN0001_Resting_ecg_2.mat','trainVal/ecg/GDN0001_Resting_ecg_3.mat']
+test_files_r= ['trainVal/radar/GDN0001_Resting_radar_4.mat']
+test_files_e= ['trainVal/ecg/GDN0001_Resting_ecg_4.mat']
+path_to_DS = '/Users/matildagaddi/Documents/SEElab/DATASET/'
 
 print('hyperparameters: ti: ', TRAIN_ITERS, ' ws: ', WINDOW_SIZE, ' lr: ', LEARN_RATE)
 
 
-train_ds = MyDataset(radar_path=f"{path_to_DS}/DATASET/{train_file_r}",
-    ecg_path=f"{path_to_DS}/DATASET/{train_file_e}", window_size=WINDOW_SIZE,
-    device=device)
-test_ds = MyDataset(radar_path=f"{path_to_DS}/DATASET/{test_file_r}", 
-    ecg_path=f"{path_to_DS}/DATASET/{test_file_e}", window_size=WINDOW_SIZE,
-    device=device)
+train_ds = MyDataset(path=path_to_DS,radar_files=train_files_r,ecg_files=train_files_e, 
+	window_size=WINDOW_SIZE,device=device)
+test_ds = MyDataset(path=path_to_DS,radar_files=test_files_r,ecg_files=test_files_e,
+	window_size=WINDOW_SIZE,device=device)
 # Get necessary statistics for data and target transform
 STD_DEVS = train_ds.data.std(0)
 MEANS = train_ds.data.mean(0)
 TARGET_STD = train_ds.target.std(0)
 TARGET_MEAN = train_ds.target.mean(0)
 
-def transform(x):
-    x = x - MEANS
-    x = x / STD_DEVS
-    return x
+# def transform(x):
+#     x = x - MEANS
+#     x = x / STD_DEVS
+#     return x
 
 
-def target_transform(x):
-    x = x - TARGET_MEAN
-    x = x / TARGET_STD
-    return x
+# def target_transform(x):
+#     x = x - TARGET_MEAN
+#     x = x / TARGET_STD
+#     return x
 
 
-train_ds.transform = transform
-train_ds.target_transform = target_transform
+# train_ds.transform = transform
+# train_ds.target_transform = target_transform
 
-test_ds.transform = transform
-test_ds.target_transform = target_transform
+# test_ds.transform = transform
+# test_ds.target_transform = target_transform
 
 #maybe DataLoader has a sliding window option, but I'm not using it for now. Just using loop indexing later
 train_dl = data.DataLoader(train_ds, batch_size=1) 
@@ -117,18 +116,20 @@ trainSamplesArr = np.array([])
 # Model training
 with torch.no_grad():
     for _ in range(TRAIN_ITERS):
-        for i in tqdm(range(len(train_ds)-WINDOW_SIZE), desc="Iteration {}".format(_ + 1)): ##check why its slower now
-            #sliding window
-            samples = train_ds.data[i:i+WINDOW_SIZE]
-            label = train_ds.target[i+WINDOW_SIZE]
-
-            samples = samples.to(device)
-            label = label.to(device)
-
-            samples_hv = model.encode(samples)
-            model.model_update(samples_hv, label)
-
-            trainSamplesArr = np.append(trainSamplesArr, samples)
+        for file in tqdm(range(len(train_ds.data)), desc="Iteration {}".format(_ + 1)):
+            for i in range(len(train_ds.data[file])-WINDOW_SIZE): ##check why its slower now
+                #sliding window
+                samples = train_ds.data[file][i:i+WINDOW_SIZE]
+                label = train_ds.target[file][i+WINDOW_SIZE]
+                #print(label) #tensor(-0.0559)
+    
+                samples = samples.to(device)
+                label = label.to(device)
+    
+                samples_hv = model.encode(samples)
+                model.model_update(samples_hv, label)
+    
+                trainSamplesArr = np.append(trainSamplesArr, samples)
 
 train_time = 0 #set up later
 
@@ -141,22 +142,26 @@ predictionsArr = np.array([])
 
 # Model testing 
 with torch.no_grad():
-    for i in tqdm(range(len(train_ds)-WINDOW_SIZE), desc="Testing"): #####test
-        samples = train_ds.data[i:i+WINDOW_SIZE] #####test
-        label = train_ds.target[i+WINDOW_SIZE] #####test
+	for file in tqdm(range(len(test_ds.data)), desc="Testing"):
+	    for i in range(len(test_ds.data[file])-WINDOW_SIZE):
+	        samples = test_ds.data[file][i:i+WINDOW_SIZE] #####test
+	        label = test_ds.target[file][i+WINDOW_SIZE] #####test
+	        #print(label) #tensor(0.0491)
 
-        samples = samples.to(device)
+	        samples = samples.to(device)
 
-        predictions = model(samples)
-        predictions = predictions * TARGET_STD + TARGET_MEAN
-        label = label * TARGET_STD + TARGET_MEAN
-        label = torch.reshape(label, (1,))
+	        predictions = model(samples)
+	        #predictions = predictions * TARGET_STD + TARGET_MEAN
+	        #label = label * TARGET_STD + TARGET_MEAN #bc of this it turns into 1024
+	        label = torch.reshape(label, (1,)) 
+	        ## RuntimeError: shape '[1]' is invalid for input of size 1024
+	        ## but I'm iterating through each point right?
 
-        mse.update(predictions.cpu(), label)
+	        mse.update(predictions.cpu(), label)
 
-        samplesArr = np.append(samplesArr, samples)
-        labelsArr = np.append(labelsArr, label)
-        predictionsArr = np.append(predictionsArr, predictions)
+	        samplesArr = np.append(samplesArr, samples)
+	        labelsArr = np.append(labelsArr, label)
+	        predictionsArr = np.append(predictionsArr, predictions)
 
 
 print(f"Testing mean squared error of {(mse.compute().item()):.20f}")
@@ -168,10 +173,11 @@ print(f"Testing mean squared error of {(mse.compute().item()):.20f}")
 # plt.legend()
 # plt.show()
 
+## ALSO PLOT TRAINING ECGS TO COMPARE FOR OVERFITTING / HOW IT REALLY LEARNS
 plt.figure(figsize=(10, 5))
 plt.plot(np.arange(len(labelsArr.flatten())), labelsArr.flatten(), label='Actual', color='blue')
 plt.plot(np.arange(len(predictionsArr)), predictionsArr, label='Predicted', color='red')
-plt.title(f'Predicted ECG- iters:{TRAIN_ITERS}, LR:{LEARN_RATE}, window:{WINDOW_SIZE}- MSE:{(mse.compute().item()):.10f}, {test_file_r}')
+plt.title(f'Predicted ECG- iters:{TRAIN_ITERS}, LR:{LEARN_RATE}, window:{WINDOW_SIZE}- MSE:{(mse.compute().item()):.10f}, {test_files_r}')
 plt.legend()
 plt.savefig(f'Pred_MSE{(mse.compute().item()):.8f}_{datetime.datetime.now()}.png') #find how to save into folder
 plt.clf()
