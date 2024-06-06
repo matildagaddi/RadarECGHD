@@ -21,9 +21,9 @@
 'test' folder has Fatemeh's experiments.
 
 ## Instructions:
-- With regHD2multi, modify the 'path_to_DS' variable for your directory to each dataset
-- If you want to change the default files, designate which files you want to train and test on with the train_files_r, train_files_e, test_files_r, test_files_e variables.
+- With 'regHD2multi', modify the 'path_to_DS' variable for your directory to each dataset
+- If you want to change the default files, designate which files you want to train and test on with the 'train_files_r', 'train_files_e', 'test_files_r', 'test_files_e' variables.
 - There is the option to change hyperparameters: hypervector dimensions, learning rate, train iterations, window size
 
 in terminal, use command:
-- python3 regHD2multifile.py
+- python3 regHD2multi.py

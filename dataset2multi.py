@@ -4,18 +4,12 @@ import os
 import os.path
 import torch
 from torch.utils import data
-#import pandas as pd
 import numpy as np
 
 import scipy
 from scipy.io import loadmat  # this is the SciPy module that loads mat-files
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from datetime import datetime, date, time
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
-
-# radar_path = "/Users/matildagaddi/Documents/SEElab/DATASET/trainVal/radar"
-# ecg_path = "/Users/matildagaddi/Documents/SEElab/DATASET/trainVal/ecg"
 
 class MyDataset(data.Dataset):
     def __init__(self, path, radar_files, ecg_files, window_size, device):
@@ -35,13 +29,9 @@ class MyDataset(data.Dataset):
         return sample, target
 
     def load_data(self):
-        myData = [] ### do with tensor instead for speed #######
+        myData = [] ### do with tensors instead for speed? #######
         myTarget = []
 
-        ### just looking at one file at a time currently ###
-        
-        #for filename in os.listdir(self.radar_path): #just do one file at a time
-        #f = os.path.join(self.radar_path, filename)
         for file in self.radar_files:
 	        fr = self.path+file
 	        if os.path.isfile(fr):
@@ -50,15 +40,8 @@ class MyDataset(data.Dataset):
 	                print("WRONG: ", len(mat["radar_l"][0]) )
 	                exit()
 
-	            #if myData is None:
 	            myData.append(mat["radar_l"][0]) 
 
-	            #print(myData)
-	            # else:
-	            #     myData = np.concatenate((myData, mat["radar_l"][0]))
-
-        #for filename in os.listdir(self.ecg_path):
-        #f = os.path.join(self.ecg_path, filename)
         for file in self.ecg_files:
 	        fe = self.path+file
 	        if os.path.isfile(fe):
@@ -67,27 +50,17 @@ class MyDataset(data.Dataset):
 	                print("WRONG: ", len(mat["ecg_l"][0]) )
 	                exit()
 
-	            # if myTarget is None:
-	            #     #print(mat["ecg_l"][0])
 	            myTarget.append(mat["ecg_l"][0])
-	            # else:
-	            #     # print(mat["ecg_l"][0])
-	            #     # print(myTarget)
-	            #     myTarget = np.concatenate((myTarget, mat["ecg_l"][0]))
 
 
-
-        myData = torch.FloatTensor( myData )
+        myData = torch.FloatTensor( myData ) ## shape == (num files, 1024 points)
         myTarget = torch.FloatTensor( myTarget )
 
-        self.data = myData
-        #print(self.data)
+        self.data = myData 
         self.target = myTarget
         
-       #  # myData = torch.div( torch.sub(myData, torch.mean(myData)), torch.std(myData) )
-
        #  # myData = torch.FloatTensor( butter_lowpass_filter(myData, 10, 2000, 2).flatten() )
-       #  # myData = torch.FloatTensor( butter_bandpass_filter(myData, 1, 5, 200, order=6) )
+       #  # myData = torch.FloatTensor( butter_bandpass_filter(myData, 1, 5, 200, order=6) ) ### Eric mentioned using bandpass filter
     
        #  len_data = len(myData)
        #  target_data_shape = (int(len_data/self.window_samples), int(self.window_samples))

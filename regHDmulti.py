@@ -152,10 +152,8 @@ with torch.no_grad():
 
 	        predictions = model(samples)
 	        #predictions = predictions * TARGET_STD + TARGET_MEAN
-	        #label = label * TARGET_STD + TARGET_MEAN #bc of this it turns into 1024
+	        #label = label * TARGET_STD + TARGET_MEAN # this it turns into 1024 dimensions
 	        label = torch.reshape(label, (1,)) 
-	        ## RuntimeError: shape '[1]' is invalid for input of size 1024
-	        ## but I'm iterating through each point right?
 
 	        mse.update(predictions.cpu(), label)
 
@@ -165,7 +163,7 @@ with torch.no_grad():
 
 
 print(f"Testing mean squared error of {(mse.compute().item()):.20f}")
-### MSEs.append([f'{(mse.compute().item()):.10f}', lr, ws, ti]) ### HP Tuning
+### MSEs.append([f'{(mse.compute().item()):.10f}', lr, ws, ti])
 #print(len(samplesArr), len(labelsArr), len(predictionsArr))
 # plt.plot(np.arange(len(samplesArr.flatten())), samplesArr.flatten(), label='test radar', alpha=0.5)
 # plt.plot(np.arange(len(trainSamplesArr.flatten())), trainSamplesArr.flatten(), label='train radar', alpha=0.5)
@@ -179,5 +177,5 @@ plt.plot(np.arange(len(labelsArr.flatten())), labelsArr.flatten(), label='Actual
 plt.plot(np.arange(len(predictionsArr)), predictionsArr, label='Predicted', color='red')
 plt.title(f'Predicted ECG- iters:{TRAIN_ITERS}, LR:{LEARN_RATE}, window:{WINDOW_SIZE}- MSE:{(mse.compute().item()):.10f}, {test_files_r}')
 plt.legend()
-plt.savefig(f'Pred_MSE{(mse.compute().item()):.8f}_{datetime.datetime.now()}.png') #find how to save into folder
+plt.savefig(f'regMulti_MSE{(mse.compute().item()):.8f}_{datetime.datetime.now()}.png') #find how to save into folder
 plt.clf()
