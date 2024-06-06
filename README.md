@@ -1,18 +1,18 @@
 # RadarECGHD
 
 ## Files
-\* = most important/revelant files
+\@ = most important/revelant files for improvement
 
 #### Dataloaders:
 - 'dataset1' loads the raw radar and ecg data. (from apnea_dataset folder)
 - 'dataset1_1' also loads the raw data, more flexible/compatible with regHD and sliding windows.
 - 'dataset2' loads the processed combined radar data and ecg signal in 5 second segment files used in the matlab example. (from DATASET folder)
-- \*'dataset2multi' loads the processed data for multiple files at once.
+- \@ 'dataset2multi' loads the processed data for multiple files at once.
 
 #### Our methods:
 - 'regHD1' uses dataset1_1 and uses sliding window to try to infer ecg signal with regHD.
 - 'regHD2' uses dataset2 and uses sliding window to try to infer ecg signal with regHD.
-- \* 'regHD2multi' uses dataset2multi and uses sliding window to try to infer ecg signal with regHD by training and on multiple files (testing on multiple files not checked/implemented yet but possible in this file).
+- \@ 'regHD2multi' uses dataset2multi and uses sliding window to try to infer ecg signal with regHD by training and on multiple files (testing on multiple files not checked/implemented yet but possible in this file).
 
 #### Baselines:
 - 'trainBase1' uses MatildaNet (from the FatemehNet file) with dataset1.
