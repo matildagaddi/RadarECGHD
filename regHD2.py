@@ -1,11 +1,10 @@
-
 import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as data
 
-# Note: this example requires the torchmetrics library: https://torchmetrics.readthedocs.io
+# Note: this example requires the torchmetrics library: https://urldefense.com/v3/__https://torchmetrics.readthedocs.io__;!!Mih3wA!AmHSPDRz07C5JBLPFjfTuelm19_PToee5ShDXTdLZFglPtKHqnQlwOPgpLo0WaXRMJJjzmmQ6OhvZ9jj4Q$ 
 import torchmetrics
 from tqdm import tqdm
 
@@ -34,75 +33,86 @@ print("Using {} device".format(device))
 #         print(MSEs)
 #         for lr in lrs:
 
-DIMENSIONS = 10000  # number of hypervector dimensions
+DIMENSIONS = 20000  # number of hypervector dimensions
 WINDOW_SIZE = 400 
 NUM_FEATURES = WINDOW_SIZE  
 #WINDOW_SAMPLES = 1024 # points
-BATCH_SIZE = 20
-LEARN_RATE = 0.00003 
+BATCH_SIZE = 100
+LEARN_RATE = 0.00005
 #lower learn rate better, maybe use early stopping or fewer iterations, prevent overfitting?
-TRAIN_ITERS = 30
-train_file_r= 'trainVal/radar/GDN0001_Resting_radar_1.mat'
-train_file_e= 'trainVal/ecg/GDN0001_Resting_ecg_1.mat'
-test_file_r= 'trainVal/radar/GDN0001_Resting_radar_2.mat'
-test_file_e= 'trainVal/ecg/GDN0001_Resting_ecg_2.mat'
-path_to_DS = '/Users/matildagaddi/Documents/SEElab'
+TRAIN_ITERS = 100
+train_files_r= ['trainVal/radar/GDN0001_Resting_radar_1.mat',
+                'trainVal/radar/GDN0001_Resting_radar_2.mat',
+                'trainVal/radar/GDN0001_Resting_radar_3.mat',
+                'trainVal/radar/GDN0001_Resting_radar_4.mat',
+                'trainVal/radar/GDN0001_Resting_radar_5.mat',
+                'trainVal/radar/GDN0001_Resting_radar_6.mat',
+                'trainVal/radar/GDN0001_Resting_radar_7.mat',
+                'trainVal/radar/GDN0001_Resting_radar_8.mat',
+                'trainVal/radar/GDN0001_Resting_radar_9.mat',
+                'trainVal/radar/GDN0001_Resting_radar_10.mat',
+                'trainVal/radar/GDN0001_Resting_radar_11.mat',
+                'trainVal/radar/GDN0001_Resting_radar_12.mat',
+
+               ]
+train_files_e= ['trainVal/ecg/GDN0001_Resting_ecg_1.mat',
+                'trainVal/ecg/GDN0001_Resting_ecg_2.mat',
+                'trainVal/ecg/GDN0001_Resting_ecg_3.mat',
+                'trainVal/ecg/GDN0001_Resting_ecg_4.mat',
+                'trainVal/ecg/GDN0001_Resting_ecg_5.mat',
+                'trainVal/ecg/GDN0001_Resting_ecg_6.mat',
+                'trainVal/ecg/GDN0001_Resting_ecg_7.mat',
+                'trainVal/ecg/GDN0001_Resting_ecg_8.mat',
+                'trainVal/ecg/GDN0001_Resting_ecg_9.mat',
+                'trainVal/ecg/GDN0001_Resting_ecg_10.mat',
+                'trainVal/ecg/GDN0001_Resting_ecg_11.mat',
+                'trainVal/ecg/GDN0001_Resting_ecg_12.mat',
+               ]
+
+test_files_r= ['trainVal/radar/GDN0001_Resting_radar_13.mat',
+               'trainVal/radar/GDN0001_Resting_radar_14.mat',
+               'trainVal/radar/GDN0001_Resting_radar_15.mat',
+
+              ]
+test_files_e= ['trainVal/ecg/GDN0001_Resting_ecg_13.mat',
+               'trainVal/ecg/GDN0001_Resting_ecg_14.mat',
+               'trainVal/ecg/GDN0001_Resting_ecg_15.mat',
+
+              ]
+path_to_DS = '/Users/matildagaddi/Documents/SEElab/DATASET/'
 
 print('hyperparameters: ti: ', TRAIN_ITERS, ' ws: ', WINDOW_SIZE, ' lr: ', LEARN_RATE)
 
+train_ds = MyDataset(path=path_to_DS,radar_files=train_files_r,ecg_files=train_files_e, 
+    window_size=WINDOW_SIZE,device=device)
+test_ds = MyDataset(path=path_to_DS,radar_files=test_files_r,ecg_files=test_files_e,
+    window_size=WINDOW_SIZE,device=device)
 
-train_ds = MyDataset(radar_path=f"{path_to_DS}/DATASET/{train_file_r}",
-    ecg_path=f"{path_to_DS}/DATASET/{train_file_e}", window_size=WINDOW_SIZE,
-    device=device)
-test_ds = MyDataset(radar_path=f"{path_to_DS}/DATASET/{test_file_r}", 
-    ecg_path=f"{path_to_DS}/DATASET/{test_file_e}", window_size=WINDOW_SIZE,
-    device=device)
-# Get necessary statistics for data and target transform
-STD_DEVS = train_ds.data.std(0)
-MEANS = train_ds.data.mean(0)
-TARGET_STD = train_ds.target.std(0)
-TARGET_MEAN = train_ds.target.mean(0)
+DATA_MEAN, DATA_STD, TARGET_MEAN, TARGET_STD = test_ds.get_params()
 
-def transform(x):
-    x = x - MEANS
-    x = x / STD_DEVS
-    return x
-
-
-def target_transform(x):
-    x = x - TARGET_MEAN
-    x = x / TARGET_STD
-    return x
-
-
-train_ds.transform = transform
-train_ds.target_transform = target_transform
-
-test_ds.transform = transform
-test_ds.target_transform = target_transform
 
 #maybe DataLoader has a sliding window option, but I'm not using it for now. Just using loop indexing later
-train_dl = data.DataLoader(train_ds, batch_size=1) 
-test_dl = data.DataLoader(test_ds, batch_size=1)
-
+train_dl = data.DataLoader(train_ds, batch_size=BATCH_SIZE) 
+test_dl = data.DataLoader(test_ds, batch_size=BATCH_SIZE)
 
 # Model based on RegHD application for Single model regression
 class SingleModel(nn.Module):
-    def __init__(self, num_classes, size):
+    def __init__(self, num_classes, size, device):
         super(SingleModel, self).__init__()
 
         self.lr = LEARN_RATE
-        self.M = torch.zeros(1, DIMENSIONS)
+        self.M = torch.zeros(1, DIMENSIONS).to(device)
         self.project2 = embeddings.Sinusoid(size, DIMENSIONS)
 
     def encode(self, x):
         sample_hv = self.project2(x)
-        return torchhd.hard_quantize(sample_hv)
+        return sample_hv
+        # return torchhd.hard_quantize(sample_hv)
 
     def model_update(self, x, y):
-        update = self.M + self.lr * (y - (F.linear(x, self.M))) * x
-        update = update.mean(0)
-        self.M = update
+        for x_sample, y_sample in zip(x,y):
+            update = self.M + self.lr * (y_sample - (F.linear(x_sample, self.M))) * x_sample
+            self.M = update
 
     def forward(self, x):
         enc = self.encode(x)
@@ -110,17 +120,14 @@ class SingleModel(nn.Module):
         return res
 
 
-model = SingleModel(1, NUM_FEATURES)
+model = SingleModel(1, NUM_FEATURES, device)
 model = model.to(device)
 
-trainSamplesArr = np.array([])
+
 # Model training
 with torch.no_grad():
     for _ in range(TRAIN_ITERS):
-        for i in tqdm(range(len(train_ds)-WINDOW_SIZE), desc="Iteration {}".format(_ + 1)): ##check why its slower now
-            #sliding window
-            samples = train_ds.data[i:i+WINDOW_SIZE]
-            label = train_ds.target[i+WINDOW_SIZE]
+        for samples, label in tqdm(train_dl, desc="Iteration {}".format(_ + 1)):
 
             samples = samples.to(device)
             label = label.to(device)
@@ -128,10 +135,7 @@ with torch.no_grad():
             samples_hv = model.encode(samples)
             model.model_update(samples_hv, label)
 
-            trainSamplesArr = np.append(trainSamplesArr, samples)
-
 train_time = 0 #set up later
-
 # Model accuracy
 mse = torchmetrics.MeanSquaredError()
 
@@ -141,37 +145,28 @@ predictionsArr = np.array([])
 
 # Model testing 
 with torch.no_grad():
-    for i in tqdm(range(len(train_ds)-WINDOW_SIZE), desc="Testing"): #####test
-        samples = train_ds.data[i:i+WINDOW_SIZE] #####test
-        label = train_ds.target[i+WINDOW_SIZE] #####test
-
+    for samples, label in tqdm(test_dl, desc="Testing"):
         samples = samples.to(device)
+        label = label.to(device)
 
         predictions = model(samples)
         predictions = predictions * TARGET_STD + TARGET_MEAN
         label = label * TARGET_STD + TARGET_MEAN
-        label = torch.reshape(label, (1,))
-
-        mse.update(predictions.cpu(), label)
-
-        samplesArr = np.append(samplesArr, samples)
-        labelsArr = np.append(labelsArr, label)
-        predictionsArr = np.append(predictionsArr, predictions)
+        label = torch.reshape(label, (samples.shape[0],1))
+        mse.update(predictions.cpu(), label.cpu())
+        samplesArr = np.append(samplesArr, samples.cpu())
+        labelsArr = np.append(labelsArr, label.cpu())
+        predictionsArr = np.append(predictionsArr, predictions.cpu())
 
 
 print(f"Testing mean squared error of {(mse.compute().item()):.20f}")
-### MSEs.append([f'{(mse.compute().item()):.10f}', lr, ws, ti]) ### HP Tuning
-#print(len(samplesArr), len(labelsArr), len(predictionsArr))
-# plt.plot(np.arange(len(samplesArr.flatten())), samplesArr.flatten(), label='test radar', alpha=0.5)
-# plt.plot(np.arange(len(trainSamplesArr.flatten())), trainSamplesArr.flatten(), label='train radar', alpha=0.5)
-# plt.title('radar data')
-# plt.legend()
-# plt.show()
+
 
 plt.figure(figsize=(10, 5))
 plt.plot(np.arange(len(labelsArr.flatten())), labelsArr.flatten(), label='Actual', color='blue')
 plt.plot(np.arange(len(predictionsArr)), predictionsArr, label='Predicted', color='red')
-plt.title(f'Predicted ECG- iters:{TRAIN_ITERS}, LR:{LEARN_RATE}, window:{WINDOW_SIZE}- MSE:{(mse.compute().item()):.10f}, {test_file_r}')
+plt.title(f'Predicted ECG- iters:{TRAIN_ITERS}, LR:{LEARN_RATE}, window:{WINDOW_SIZE}- MSE:{(mse.compute().item()):.10f}')
 plt.legend()
-plt.savefig(f'Pred_MSE{(mse.compute().item()):.8f}_{datetime.datetime.now()}.png') #find how to save into folder
-plt.clf()
+plt.savefig(f'Flavio_MSE{(mse.compute().item()):.8f}_.png') #find how to save into folder
+plt.show()
+# plt.clf()

@@ -15,76 +15,63 @@ from sklearn.preprocessing import StandardScaler
 # radar_path = "/Users/matildagaddi/Documents/SEElab/DATASET/trainVal/radar"
 # ecg_path = "/Users/matildagaddi/Documents/SEElab/DATASET/trainVal/ecg"
 
+
 class MyDataset(data.Dataset):
-    def __init__(self, radar_path, ecg_path, window_size, device):
-        self.radar_path = radar_path
-        self.ecg_path = ecg_path
+    def __init__(self, path, radar_files, ecg_files, window_size, device):
+        self.path = path
+        self.radar_files = radar_files
+        self.ecg_files = ecg_files
         self.window_size = int(window_size)
         self.device = device
         self.load_data()
+        self.normalize()
 
     def __len__(self): #this method indicates how many times you have to loop when iterating over the dataset (line 58)
-        return self.data.size(0) 
+        return self.data.size(0) - self.window_size
 
-    def __getitem__(self, index): #given an index (from 0, to __len__ output), return sample and label
-        sample = self.data[index] 
-        target = self.target[index]
+    def __getitem__(self, index):
+        sample = self.data[index:index+self.window_size] 
+        target = self.target[index+self.window_size]
         return sample, target
 
     def load_data(self):
         myData = None
         myTarget = None
+        for file in self.radar_files:
+            fr = self.path+file
+            if os.path.isfile(fr):
+                mat = loadmat(fr)
+                if(len(mat["radar_l"][0]) != 1024):
+                    print("WRONG: ", len(mat["radar_l"][0]) )
+                    exit()
+                if myData is None:
+                    myData = torch.from_numpy(mat["radar_l"][0])
+                else:
+                    myData = torch.cat((myData, torch.from_numpy(mat["radar_l"][0])), 0)
 
-        ### just looking at one file at a time currently ###
-        
-        #for filename in os.listdir(self.radar_path): #just do one file at a time
-        #f = os.path.join(self.radar_path, filename)
-        fr = self.radar_path
-        if os.path.isfile(fr):
-            mat = loadmat(fr)
-            if(len(mat["radar_l"][0]) != 1024):
-                print("WRONG: ", len(mat["radar_l"][0]) )
-                exit()
+        for file in self.ecg_files:
+            fe = self.path+file
+            if os.path.isfile(fe):
+                mat = loadmat(fe)
+                if(len(mat["ecg_l"][0]) != 1024):
+                    print("WRONG: ", len(mat["ecg_l"][0]) )
+                    exit()
+                if myTarget is None:
+                    myTarget = torch.from_numpy(mat["ecg_l"][0])
+                else:
+                    myTarget = torch.cat((myTarget, torch.from_numpy(mat["ecg_l"][0])), 0)
 
-            #if myData is None:
-            myData = mat["radar_l"][0]
-            # else:
-            #     myData = np.concatenate((myData, mat["radar_l"][0]))
-
-        #for filename in os.listdir(self.ecg_path):
-        #f = os.path.join(self.ecg_path, filename)
-        fe = self.ecg_path
-        if os.path.isfile(fe):
-            mat = loadmat(fe)
-            if(len(mat["ecg_l"][0]) != 1024):
-                print("WRONG: ", len(mat["ecg_l"][0]) )
-                exit()
-
-            # if myTarget is None:
-            #     #print(mat["ecg_l"][0])
-            myTarget = mat["ecg_l"][0]
-            # else:
-            #     # print(mat["ecg_l"][0])
-            #     # print(myTarget)
-            #     myTarget = np.concatenate((myTarget, mat["ecg_l"][0]))
+        self.data = myData.float() 
+        self.target = myTarget.float()
 
 
+    def normalize(self):
+        self.DATA_STD = self.data.std(0)
+        self.DATA_MEAN = self.data.mean(0)
+        self.TARGET_STD = self.target.std(0)
+        self.TARGET_MEAN = self.target.mean(0)
+        self.data = (self.data - self.DATA_MEAN) / self.DATA_STD
+        self.target = (self.target - self.TARGET_MEAN) / self.TARGET_STD
 
-        myData = torch.FloatTensor( myData )
-        myTarget = torch.FloatTensor( myTarget )
-
-        self.data = myData
-        self.target = myTarget
-        
-       #  # myData = torch.div( torch.sub(myData, torch.mean(myData)), torch.std(myData) )
-
-       #  # myData = torch.FloatTensor( butter_lowpass_filter(myData, 10, 2000, 2).flatten() )
-       #  # myData = torch.FloatTensor( butter_bandpass_filter(myData, 1, 5, 200, order=6) )
-    
-       #  len_data = len(myData)
-       #  target_data_shape = (int(len_data/self.window_samples), int(self.window_samples))
-       #  required_elements = target_data_shape[0] * target_data_shape[1]
-
-       #  self.data = torch.reshape(myData[0:required_elements], target_data_shape)
-       #  self.target = torch.reshape(myTarget[0:required_elements], target_data_shape)
-       # # myTarget = torch.reshape(myTarget[0:required_elements], target_data_shape)
+    def get_params(self):
+        return self.DATA_MEAN, self.DATA_STD, self.TARGET_MEAN, self.TARGET_STD
