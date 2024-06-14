@@ -1,32 +1,6 @@
 #regHD2cnn
 import torch.nn as nn
 
-# class SimpleCNN(nn.Module):
-#     def __init__(self):
-#         super(SimpleCNN, self).__init__()
-#         self.conv1 = nn.Conv1d(in_channels=1, out_channels=16, kernel_size=3, stride=1, padding=1) 
-#         #in channels = batch size but that doesnt make sense
-#         self.relu = nn.ReLU()
-#         self.maxpool = nn.MaxPool1d(kernel_size=2, stride=2)
-#         self.conv2 = nn.Conv1d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=1)
-#         self.fc = nn.Linear(in_features=32 * 16 * 16, out_features=10) #in_features=32 * 16 * 16
-
-#     def forward(self, x):
-#     	# apply two conv layers
-#         x = self.conv1(x)
-#         x = self.relu(x)
-#         x = self.maxpool(x)
-#         x = self.conv2(x)
-#         x = self.relu(x)
-#         x = self.maxpool(x)
-#         # flatten
-#         x = x.view(x.size(0), -1)
-#         # dense layer
-#         x = self.fc(x)
-#         return x
-
-# simple = SimpleCNN()
-
 import math
 import torch
 import torch.nn as nn
@@ -67,7 +41,7 @@ WINDOW_SIZE = 400
 NUM_FEATURES = WINDOW_SIZE  
 #WINDOW_SAMPLES = 1024 # points
 BATCH_SIZE = 200
-LEARN_RATE = 0.00005
+LEARN_RATE = 0.0005
 #lower learn rate better, maybe use early stopping or fewer iterations, prevent overfitting?
 TRAIN_ITERS = 50
 train_files_r= ['trainVal/radar/GDN0001_Resting_radar_1.mat',
@@ -141,7 +115,7 @@ class SingleModel(nn.Module):
             nn.Conv1d(in_channels=4, out_channels=8, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2),
-            nn.Conv1d(in_channels=8, out_channels=16, kernel_size=3, padding=1), #lower out_channels?
+            nn.Conv1d(in_channels=8, out_channels=16, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.MaxPool1d(kernel_size=2)
         )

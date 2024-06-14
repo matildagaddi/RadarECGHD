@@ -11,10 +11,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime, date, time
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-
-# radar_path = "/Users/matildagaddi/Documents/SEElab/DATASET/trainVal/radar"
-# ecg_path = "/Users/matildagaddi/Documents/SEElab/DATASET/trainVal/ecg"
-
+from modwt import *
 
 class MyDataset(data.Dataset):
     def __init__(self, path, radar_files, ecg_files, window_size, device):
@@ -26,11 +23,11 @@ class MyDataset(data.Dataset):
         self.load_data()
         self.normalize()
 
-    def __len__(self): #this method indicates how many times you have to loop when iterating over the dataset (line 58)
-        return self.data.size(0) - self.window_size
+    def __len__(self):
+        return self.data.shape[1] - self.window_size
 
     def __getitem__(self, index):
-        sample = self.data[index:index+self.window_size] 
+        sample = self.data[:, index:index+self.window_size] 
         target = self.target[index+self.window_size]
         return sample, target
 
@@ -60,18 +57,21 @@ class MyDataset(data.Dataset):
                     myTarget = torch.from_numpy(mat["ecg_l"][0])
                 else:
                     myTarget = torch.cat((myTarget, torch.from_numpy(mat["ecg_l"][0])), 0)
-
         self.data = myData.float() 
         self.target = myTarget.float()
 
-
     def normalize(self):
-        self.DATA_STD = self.data.std(0)
-        self.DATA_MEAN = self.data.mean(0)
-        self.TARGET_STD = self.target.std(0)
-        self.TARGET_MEAN = self.target.mean(0)
-        self.data = (self.data - self.DATA_MEAN) / self.DATA_STD
-        self.target = (self.target - self.TARGET_MEAN) / self.TARGET_STD
+        self.DATA_MAX = self.data.max()
+        self.DATA_MIN = self.data.min()
+        self.TARGET_MAX = self.target.max()
+        self.TARGET_MIN = self.target.min()
+        self.data = (self.data - self.DATA_MIN) / (self.DATA_MAX - self.DATA_MIN)
+        self.target = (self.target - self.TARGET_MIN) / (self.TARGET_MAX - self.TARGET_MIN)
 
+        wt = modwt(self.data, 'sym2', 5)
+        self.data = modwtmra(wt, 'sym2')
+        self.data = self.data[3:5, :]        
+        
+        
     def get_params(self):
-        return self.DATA_MEAN, self.DATA_STD, self.TARGET_MEAN, self.TARGET_STD
+        return self.DATA_MIN, self.DATA_MAX, self.TARGET_MIN, self.TARGET_MAX, self.data.shape[0]
