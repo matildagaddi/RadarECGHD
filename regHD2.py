@@ -17,42 +17,42 @@ NUM_FEATURES = WINDOW_SIZE
 BATCH_SIZE = 300
 LEARN_RATE = [1e-6]
 TRAIN_ITERS = 50
-train_files_r= ['trainVal/radar/GDN0004_Apnea_radar_1.mat',
-                'trainVal/radar/GDN0004_Apnea_radar_2.mat',
-                'trainVal/radar/GDN0004_Apnea_radar_3.mat',
-                'trainVal/radar/GDN0004_Apnea_radar_4.mat',
-                'trainVal/radar/GDN0004_Apnea_radar_5.mat',
-                'trainVal/radar/GDN0004_Apnea_radar_6.mat',
-                'trainVal/radar/GDN0004_Apnea_radar_7.mat',
-                'trainVal/radar/GDN0004_Apnea_radar_8.mat',
-                'trainVal/radar/GDN0004_Apnea_radar_9.mat',
-                'trainVal/radar/GDN0004_Apnea_radar_10.mat',
-                'trainVal/radar/GDN0004_Apnea_radar_11.mat',
-                'trainVal/radar/GDN0004_Apnea_radar_12.mat',
+train_files_r= ['trainVal/radar/GDN0001_Resting_radar_1.mat',
+                'trainVal/radar/GDN0001_Resting_radar_2.mat',
+                'trainVal/radar/GDN0001_Resting_radar_3.mat',
+                'trainVal/radar/GDN0002_Resting_radar_4.mat',
+                'trainVal/radar/GDN0002_Resting_radar_5.mat',
+                'trainVal/radar/GDN0002_Resting_radar_6.mat',
+                'trainVal/radar/GDN0003_Resting_radar_7.mat',
+                'trainVal/radar/GDN0003_Resting_radar_8.mat',
+                'trainVal/radar/GDN0003_Resting_radar_9.mat',
+                'trainVal/radar/GDN0004_Resting_radar_10.mat',
+                'trainVal/radar/GDN0004_Resting_radar_11.mat',
+                'trainVal/radar/GDN0004_Resting_radar_12.mat',
 
                ]
-train_files_e= ['trainVal/ecg/GDN0004_Apnea_ecg_1.mat',
-                'trainVal/ecg/GDN0004_Apnea_ecg_2.mat',
-                'trainVal/ecg/GDN0004_Apnea_ecg_3.mat',
-                'trainVal/ecg/GDN0004_Apnea_ecg_4.mat',
-                'trainVal/ecg/GDN0004_Apnea_ecg_5.mat',
-                'trainVal/ecg/GDN0004_Apnea_ecg_6.mat',
-                'trainVal/ecg/GDN0004_Apnea_ecg_7.mat',
-                'trainVal/ecg/GDN0004_Apnea_ecg_8.mat',
-                'trainVal/ecg/GDN0004_Apnea_ecg_9.mat',
-                'trainVal/ecg/GDN0004_Apnea_ecg_10.mat',
-                'trainVal/ecg/GDN0004_Apnea_ecg_11.mat',
-                'trainVal/ecg/GDN0004_Apnea_ecg_12.mat',
+train_files_e= ['trainVal/ecg/GDN0001_Resting_ecg_1.mat',
+                'trainVal/ecg/GDN0001_Resting_ecg_2.mat',
+                'trainVal/ecg/GDN0001_Resting_ecg_3.mat',
+                'trainVal/ecg/GDN0002_Resting_ecg_4.mat',
+                'trainVal/ecg/GDN0002_Resting_ecg_5.mat',
+                'trainVal/ecg/GDN0002_Resting_ecg_6.mat',
+                'trainVal/ecg/GDN0003_Resting_ecg_7.mat',
+                'trainVal/ecg/GDN0003_Resting_ecg_8.mat',
+                'trainVal/ecg/GDN0003_Resting_ecg_9.mat',
+                'trainVal/ecg/GDN0004_Resting_ecg_10.mat',
+                'trainVal/ecg/GDN0004_Resting_ecg_11.mat',
+                'trainVal/ecg/GDN0004_Resting_ecg_12.mat',
                ]
 
-test_files_r= ['trainVal/radar/GDN0004_Apnea_radar_13.mat',
-               'trainVal/radar/GDN0004_Apnea_radar_14.mat',
-               'trainVal/radar/GDN0004_Apnea_radar_15.mat',
+test_files_r= ['trainVal/radar/GDN0005_Resting_radar_13.mat',
+               'trainVal/radar/GDN0005_Resting_radar_14.mat',
+               'trainVal/radar/GDN0005_Resting_radar_15.mat',
 
               ]
-test_files_e= ['trainVal/ecg/GDN0004_Apnea_ecg_13.mat',
-               'trainVal/ecg/GDN0004_Apnea_ecg_14.mat',
-               'trainVal/ecg/GDN0004_Apnea_ecg_15.mat',
+test_files_e= ['trainVal/ecg/GDN0005_Resting_ecg_13.mat',
+               'trainVal/ecg/GDN0005_Resting_ecg_14.mat',
+               'trainVal/ecg/GDN0005_Resting_ecg_15.mat',
 
               ]
 path_to_DS = '/Users/matildagaddi/Documents/SEElab/DATASET/'
@@ -86,4 +86,4 @@ for f in NUM_FEATURES:
       plt.plot(np.arange(len(predictionsArr)), predictionsArr, label='Predicted', color='red')
       plt.title(f'Predicted ECG- iters:{TRAIN_ITERS}, LR:{LEARN_RATE}, window:{WINDOW_SIZE}- MSE:{(mse.compute().item()):.10f}')
       plt.legend()
-      plt.savefig(f'HDC{(mse.compute().item()):.3f}_{d}_{f}_{lr}.png') 
+      plt.savefig(f'HDC{(mse.compute().item()):.4f}_{d}_{f}_{lr}.png') 
