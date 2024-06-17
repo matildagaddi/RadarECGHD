@@ -63,7 +63,7 @@ for f in NUM_FEATURES:
                 plt.figure(figsize=(10, 5))
                 plt.plot(np.arange(len(labelsArr.flatten())), labelsArr.flatten(), label='Actual', color='blue')
                 plt.plot(np.arange(len(predictionsArrFiltered)), predictionsArrFiltered, label='Predicted', color='red')
-                plt.title(f'Predicted ECG- iters:{TRAIN_ITERS}, CO:{cutoff}, FS:{fs}, window:{WINDOW_SIZE}- MSE:{(mse.compute().item()):.10f}_date')
+                plt.title(f'Predicted ECG- iters:{TRAIN_ITERS}, CO:{cutoff}, FS:{fs}, window:{WINDOW_SIZE}- MSE:{(mse.compute().item()):.10f}')
                 plt.legend()
                 plt.savefig(f'ds3_{(mse.compute().item()):.3f}_{d}_{f}_{lr}_{fs}_{PEAK_THRESH}_{datetime.datetime.now()}.png') #need date so it doesn't rewrite previous file
                 print('saved')

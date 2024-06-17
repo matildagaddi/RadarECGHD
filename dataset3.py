@@ -40,20 +40,21 @@ class MyDataset(data.Dataset):
         myDataI = None
         #myDataQ = None
         myTarget = None
-        for subject in self.subjects:
-            file = self.path+'subject'+str(subject)+'.csv'
+        for i in range(len(self.subjects_sections)):
+            curSubj = self.subjects_sections[i]
+            file = self.path+'subject'+str(curSubj[0])+'.csv'
             if os.path.isfile(file):
                 curData, curTarget = np.loadtxt(file, dtype='float,float', delimiter=',', usecols=(1, 5), skiprows=23, unpack=True)
                 if myDataI is None:
-                    myDataI = torch.from_numpy(curData[:10000:self.step]) #make parameter for amount/part of file to use
+                    myDataI = torch.from_numpy(curData[curSubj[1]:curSubj[2]:self.step])
                 else:
-                    myDataI = torch.cat((myDataI, torch.from_numpy(curData[:10000:self.step])), 0)
+                    myDataI = torch.cat((myDataI, torch.from_numpy(curData[curSubj[1]:curSubj[2]:self.step])), 0)
                 if myTarget is None:
-                    myTarget = torch.from_numpy(curTarget[:10000:self.step])
+                    myTarget = torch.from_numpy(curTarget[curSubj[1]:curSubj[2]:self.step])
                 else:
-                    myTarget = torch.cat((myTarget, torch.from_numpy(curTarget[:10000:self.step])), 0)
-                plt.plot(curData[:10000], color = 'blue')
-                plt.plot(curTarget[:10000], color = 'orange')
+                    myTarget = torch.cat((myTarget, torch.from_numpy(curTarget[curSubj[1]:curSubj[2]:self.step])), 0)
+                plt.plot(myDataI, color = 'blue')
+                plt.plot(myTarget, color = 'orange')
                 plt.show()
         
         self.data = myDataI.float() 
