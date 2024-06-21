@@ -91,13 +91,15 @@ for f in NUM_FEATURES:
                 predictionsArrFiltered = butter_lowpass_filter(predictionsArr, cutoff, fs, 5)
                 #replace filtered peaks with original peaks
                 predictionsArrFiltered[peaks] = predictionsArr[peaks]
-                
+                corr = torch.corrcoef(torch.tensor([labelsArr.flatten(),predictionsArrFiltered]))[0][1]
+
                 print(f"Testing mean squared error of {(mse.compute().item()):.20f}")
+                print(f"Testing correlation of {corr}")
                 plt.figure(figsize=(10, 5))
                 plt.plot(np.arange(len(labelsArr.flatten())), labelsArr.flatten(), label='Actual', color='blue')
                 plt.plot(np.arange(len(predictionsArrFiltered)), predictionsArrFiltered, label='Predicted', color='red')
                 plt.title(f'Predicted ECG- iters:{TRAIN_ITERS}, CO:{cutoff}, FS:{fs}, window:{WINDOW_SIZE}- MSE:{(mse.compute().item()):.10f}_date')
                 plt.legend()
-                plt.savefig(f'HDC{(mse.compute().item()):.3f}_{d}_{f}_{lr}_{fs}_{PEAK_THRESH}_{datetime.datetime.now()}.png') #need date so it doesn't rewrite previous file
+                plt.savefig(f'HDC{(mse.compute().item()):.4f}_{corr}_{d}_{f}_{lr}_{fs}_{PEAK_THRESH}_{datetime.datetime.now()}.png') #need date so it doesn't rewrite previous file
                 print('saved')
             plt.clf()

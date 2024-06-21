@@ -38,7 +38,7 @@ class MyDataset(data.Dataset):
 
     def load_data(self):
         myDataI = None
-        #myDataQ = None
+        #myDataQ = None #arctangent tells you demodulated signal
         myTarget = None
         for i in range(len(self.subjects_sections)):
             curSubj = self.subjects_sections[i]
