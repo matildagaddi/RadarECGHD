@@ -50,7 +50,7 @@ class MyDataset(data.Dataset):
             fe = self.path+file
             if os.path.isfile(fe):
                 mat = loadmat(fe)
-                if(len(mat["ecg_l"][0]) != 1024):
+                if(len(mat["ecg_l"][0]) != 1024): # file already comes subsampled from OG 2000 pts per second, now 200 pts per second
                     print("WRONG: ", len(mat["ecg_l"][0]) )
                     exit()
                 if myTarget is None:
