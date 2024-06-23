@@ -10,6 +10,8 @@ from tqdm import tqdm
 import numpy as np
 import scipy
 from scipy import signal
+import neurokit2 as nk
+import matplotlib.pyplot as plt
 
 def butter_lowpass_filter(data, cutoff, fs, order):
     normal_cutoff = cutoff * 2 / fs
@@ -95,3 +97,79 @@ class HDradarECG(nn.Module):
         res = torch.mul(enc, self.M)
         res = torch.sum(res, dim=1)
         return res, enc
+
+def get_AAEs(labelsArr, predictionsArrFiltered, sampleRate):
+    #maybe move below to utils
+    ### actual ECG ###
+
+    # Retrieve ECG data from data folder
+    ecg_signal = labelsArr
+    # Extract R-peaks locations
+    _, rpeaks = nk.ecg_peaks(ecg_signal, sampling_rate=sampleRate) #rate depends on heart rate, so we might need to fix
+    rPeaksTrue = np.array(rpeaks['ECG_R_Peaks']) #indexed dictionary for array of peak indices
+    # Plot the events using the events_plot function
+    # nk.events_plot(rpeaks['ECG_R_Peaks'], ecg_signal)
+    
+    # P,Q,S,T peaks
+    _, waves_peak = nk.ecg_delineate(ecg_signal, rpeaks, sampling_rate=sampleRate, method="peak")
+    pPeaksTrue = np.array(waves_peak['ECG_P_Peaks'])
+    qPeaksTrue = np.array(waves_peak['ECG_Q_Peaks'])
+    sPeaksTrue = np.array(waves_peak['ECG_S_Peaks'])
+    tPeaksTrue = np.array(waves_peak['ECG_T_Peaks'])
+   
+    nk.events_plot([waves_peak['ECG_P_Peaks'], 
+                           waves_peak['ECG_Q_Peaks'],
+                           rpeaks['ECG_R_Peaks'],
+                           waves_peak['ECG_S_Peaks'],
+                           waves_peak['ECG_T_Peaks']], ecg_signal)
+    
+    # Save the plot to a file
+    plt.savefig('ecg_true_peaks.png')
+    # Display the plot
+    plt.show()
+
+    ### predicted ECG ###
+
+    # Retrieve ECG data from data folder
+    ecg_signal = predictionsArrFiltered
+    # Extract R-peaks locations
+    _, rpeaks = nk.ecg_peaks(ecg_signal, sampling_rate=sampleRate)
+    rPeaksPred = np.array(rpeaks['ECG_R_Peaks'])
+    # Plot the events using the events_plot function
+    # nk.events_plot(rpeaks['ECG_R_Peaks'], ecg_signal)
+
+    # P,Q,S,T peaks
+    _, waves_peak = nk.ecg_delineate(ecg_signal, rpeaks, sampling_rate=sampleRate, method="peak")
+    pPeaksPred = np.array(waves_peak['ECG_P_Peaks'])
+    qPeaksPred = np.array(waves_peak['ECG_Q_Peaks'])
+    sPeaksPred = np.array(waves_peak['ECG_S_Peaks'])
+    tPeaksPred = np.array(waves_peak['ECG_T_Peaks'])
+    
+    nk.events_plot([waves_peak['ECG_P_Peaks'], 
+                           waves_peak['ECG_Q_Peaks'],
+                           rpeaks['ECG_R_Peaks'],
+                           waves_peak['ECG_S_Peaks'],
+                           waves_peak['ECG_T_Peaks']], ecg_signal)
+    
+    # Save the plot to a file
+    plt.savefig('ecg_pred_peaks.png')
+    # Display the plot
+    plt.show()
+
+    #AAE of peaks
+    minPeaks = min(np.count_nonzero(~np.isnan(pPeaksTrue)), np.count_nonzero(~np.isnan(pPeaksPred)), # nans at the end causing problems
+        np.count_nonzero(~np.isnan(qPeaksTrue)), np.count_nonzero(~np.isnan(qPeaksPred)),
+        np.count_nonzero(~np.isnan(rPeaksTrue)), np.count_nonzero(~np.isnan(rPeaksPred)),
+        np.count_nonzero(~np.isnan(sPeaksTrue)), np.count_nonzero(~np.isnan(sPeaksPred)),
+        np.count_nonzero(~np.isnan(tPeaksTrue)), np.count_nonzero(~np.isnan(tPeaksPred)))
+    pAAE = (np.sum(abs(pPeaksTrue[:minPeaks] - pPeaksPred[:minPeaks])))/minPeaks
+    #print(np.sum(abs(pPeaksTrue[:minPeaks] - pPeaksPred[:minPeaks])), minPeaks, pPeaksTrue[:minPeaks], pPeaksPred[:minPeaks])
+    qAAE = (np.sum(abs(qPeaksTrue[:minPeaks] - qPeaksPred[:minPeaks])))/minPeaks
+    rAAE = (np.sum(abs(rPeaksTrue[:minPeaks] - rPeaksPred[:minPeaks])))/minPeaks
+    sAAE = (np.sum(abs(sPeaksTrue[:minPeaks] - sPeaksPred[:minPeaks])))/minPeaks
+    tAAE = (np.sum(abs(tPeaksTrue[:minPeaks] - tPeaksPred[:minPeaks])))/minPeaks
+    # in index units, need to convert to time, keep track of sampling rates
+    # Contactless and ECG both report ms
+
+    aaes = np.array([pAAE, qAAE, rAAE, sAAE, tAAE])*5 #convert to ms
+    return aaes
