@@ -23,7 +23,7 @@ SAMPLE_RATE = [230]
 FS = [600] #has to be bigger than cutoff*2 (to make between 0 and 1)
 CUTOFF = 30
 PEAK_THRESH = 0.3
-TRAIN_ITERS = 1
+TRAIN_ITERS = 50
 train_files_r= ['trainVal/radar/GDN0004_Resting_radar_1.mat',
                 'trainVal/radar/GDN0004_Resting_radar_2.mat',
                 'trainVal/radar/GDN0004_Resting_radar_3.mat',
@@ -91,8 +91,9 @@ for f in NUM_FEATURES:
                 #preserve peaks
                 peaks, _ = find_peaks(predictionsArr, height=PEAK_THRESH)
                 predictionsArrFiltered = butter_lowpass_filter(predictionsArr, CUTOFF, fs, 5)
-                AAEs = get_AAEs(labelsArr, predictionsArrFiltered, sr)
+                AAEs, medAEs = get_AAEs_medAEs(labelsArr, predictionsArrFiltered, sr)
                 print(f'AAEs (p,q,r,s,t):{AAEs}') 
+                print(f'MedAEs (p,q,r,s,t):{medAEs}') 
                 #replace filtered peaks with original peaks for higher correlation and better R peak height
                 predictionsArrFiltered[peaks] = predictionsArr[peaks]
                 corr = torch.corrcoef(torch.tensor([labelsArr.flatten(),predictionsArrFiltered]))[0][1]
@@ -103,7 +104,7 @@ for f in NUM_FEATURES:
                 plt.plot(np.arange(len(labelsArr.flatten())), labelsArr.flatten(), label='Actual', color='blue')
                 plt.plot(np.arange(len(predictionsArrFiltered)), predictionsArrFiltered, label='Predicted', color='red')
                 plt.title(f'Predicted ECG- iters:{TRAIN_ITERS}, FS:{fs}, window:{WINDOW_SIZE}- MSE:{(mse.compute().item()):.10f}_date')
-                plt.annotate(f'AAEs (p,q,r,s,t):{AAEs} \n sample rate: {sr} \n correlation: {corr}',
+                plt.annotate(f'AAEs (p,q,r,s,t):{AAEs} \n MedAEs (p,q,r,s,t):{medAEs} \n sample rate: {sr} \n correlation: {corr}',
                             xy = (1.0, -0.2),
                             xycoords='axes fraction',
                             ha='right',

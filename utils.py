@@ -98,7 +98,7 @@ class HDradarECG(nn.Module):
         res = torch.sum(res, dim=1)
         return res, enc
 
-def get_AAEs(labelsArr, predictionsArrFiltered, sampleRate):
+def get_AAEs_medAEs(labelsArr, predictionsArrFiltered, sampleRate):
     #maybe move below to utils
     ### actual ECG ###
 
@@ -156,12 +156,14 @@ def get_AAEs(labelsArr, predictionsArrFiltered, sampleRate):
     # Display the plot
     plt.show()
 
-    #AAE of peaks
     minPeaks = min(np.count_nonzero(~np.isnan(pPeaksTrue)), np.count_nonzero(~np.isnan(pPeaksPred)), # nans at the end causing problems
         np.count_nonzero(~np.isnan(qPeaksTrue)), np.count_nonzero(~np.isnan(qPeaksPred)),
         np.count_nonzero(~np.isnan(rPeaksTrue)), np.count_nonzero(~np.isnan(rPeaksPred)),
         np.count_nonzero(~np.isnan(sPeaksTrue)), np.count_nonzero(~np.isnan(sPeaksPred)),
         np.count_nonzero(~np.isnan(tPeaksTrue)), np.count_nonzero(~np.isnan(tPeaksPred)))
+    
+    #AAE of peaks
+    
     pAAE = (np.sum(abs(pPeaksTrue[:minPeaks] - pPeaksPred[:minPeaks])))/minPeaks
     #print(np.sum(abs(pPeaksTrue[:minPeaks] - pPeaksPred[:minPeaks])), minPeaks, pPeaksTrue[:minPeaks], pPeaksPred[:minPeaks])
     qAAE = (np.sum(abs(qPeaksTrue[:minPeaks] - qPeaksPred[:minPeaks])))/minPeaks
@@ -171,5 +173,18 @@ def get_AAEs(labelsArr, predictionsArrFiltered, sampleRate):
     # in index units, need to convert to time, keep track of sampling rates
     # Contactless and ECG both report ms
 
-    aaes = np.array([pAAE, qAAE, rAAE, sAAE, tAAE])*5 #convert to ms
-    return aaes
+    aAEs = np.array([pAAE, qAAE, rAAE, sAAE, tAAE])*5 #convert to ms
+    
+    #median AE of peaks
+    pMedAE = np.median(abs(pPeaksTrue[:minPeaks] - pPeaksPred[:minPeaks]))
+    #print(np.sum(abs(pPeaksTrue[:minPeaks] - pPeaksPred[:minPeaks])), minPeaks, pPeaksTrue[:minPeaks], pPeaksPred[:minPeaks])
+    qMedAE = np.median(abs(qPeaksTrue[:minPeaks] - qPeaksPred[:minPeaks]))
+    rMedAE = np.median(abs(rPeaksTrue[:minPeaks] - rPeaksPred[:minPeaks]))
+    sMedAE = np.median(abs(sPeaksTrue[:minPeaks] - sPeaksPred[:minPeaks]))
+    tMedAE = np.median(abs(tPeaksTrue[:minPeaks] - tPeaksPred[:minPeaks]))
+    # in index units, need to convert to time, keep track of sampling rates
+    # Contactless and ECG both report ms
+
+    medAEs = np.array([pMedAE, qMedAE, rMedAE, sMedAE, tMedAE])*5 #convert to ms
+    
+    return aAEs, medAEs
