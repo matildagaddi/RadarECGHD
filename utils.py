@@ -99,6 +99,7 @@ class HDradarECG(nn.Module):
         return res, enc
 
 def get_AAEs_medAEs(labelsArr, predictionsArrFiltered, sampleRate):
+    msConversion = 5 # 200pts = 1000ms -> 1pt = 5ms: 5/200
     #maybe move below to utils
     ### actual ECG ###
 
@@ -126,7 +127,7 @@ def get_AAEs_medAEs(labelsArr, predictionsArrFiltered, sampleRate):
     # Save the plot to a file
     plt.savefig('ecg_true_peaks.png')
     # Display the plot
-    plt.show()
+    #plt.show()
 
     ### predicted ECG ###
 
@@ -154,7 +155,7 @@ def get_AAEs_medAEs(labelsArr, predictionsArrFiltered, sampleRate):
     # Save the plot to a file
     plt.savefig('ecg_pred_peaks.png')
     # Display the plot
-    plt.show()
+    #plt.show()
 
     minPeaks = min(np.count_nonzero(~np.isnan(pPeaksTrue)), np.count_nonzero(~np.isnan(pPeaksPred)), # nans at the end causing problems
         np.count_nonzero(~np.isnan(qPeaksTrue)), np.count_nonzero(~np.isnan(qPeaksPred)),
@@ -162,29 +163,20 @@ def get_AAEs_medAEs(labelsArr, predictionsArrFiltered, sampleRate):
         np.count_nonzero(~np.isnan(sPeaksTrue)), np.count_nonzero(~np.isnan(sPeaksPred)),
         np.count_nonzero(~np.isnan(tPeaksTrue)), np.count_nonzero(~np.isnan(tPeaksPred)))
     
-    #AAE of peaks
+    pAbsErr = abs(pPeaksTrue[:minPeaks] - pPeaksPred[:minPeaks]) * msConversion
+    print(pAbsErr)
+    qAbsErr = abs(qPeaksTrue[:minPeaks] - qPeaksPred[:minPeaks]) * msConversion
+    rAbsErr = abs(rPeaksTrue[:minPeaks] - rPeaksPred[:minPeaks]) * msConversion
+    sAbsErr = abs(sPeaksTrue[:minPeaks] - sPeaksPred[:minPeaks]) * msConversion
+    tAbsErr = abs(tPeaksTrue[:minPeaks] - tPeaksPred[:minPeaks]) * msConversion
     
-    pAAE = (np.sum(abs(pPeaksTrue[:minPeaks] - pPeaksPred[:minPeaks])))/minPeaks
-    #print(np.sum(abs(pPeaksTrue[:minPeaks] - pPeaksPred[:minPeaks])), minPeaks, pPeaksTrue[:minPeaks], pPeaksPred[:minPeaks])
-    qAAE = (np.sum(abs(qPeaksTrue[:minPeaks] - qPeaksPred[:minPeaks])))/minPeaks
-    rAAE = (np.sum(abs(rPeaksTrue[:minPeaks] - rPeaksPred[:minPeaks])))/minPeaks
-    sAAE = (np.sum(abs(sPeaksTrue[:minPeaks] - sPeaksPred[:minPeaks])))/minPeaks
-    tAAE = (np.sum(abs(tPeaksTrue[:minPeaks] - tPeaksPred[:minPeaks])))/minPeaks
-    # in index units, need to convert to time, keep track of sampling rates
-    # Contactless and ECG both report ms
 
-    aAEs = np.array([pAAE, qAAE, rAAE, sAAE, tAAE])*5 #convert to ms
+    #AAE of peaks
+
+    aAEs = np.array([np.mean(pAbsErr), np.mean(qAbsErr), np.mean(rAbsErr), np.mean(sAbsErr), np.mean(tAbsErr)])
     
     #median AE of peaks
-    pMedAE = np.median(abs(pPeaksTrue[:minPeaks] - pPeaksPred[:minPeaks]))
-    #print(np.sum(abs(pPeaksTrue[:minPeaks] - pPeaksPred[:minPeaks])), minPeaks, pPeaksTrue[:minPeaks], pPeaksPred[:minPeaks])
-    qMedAE = np.median(abs(qPeaksTrue[:minPeaks] - qPeaksPred[:minPeaks]))
-    rMedAE = np.median(abs(rPeaksTrue[:minPeaks] - rPeaksPred[:minPeaks]))
-    sMedAE = np.median(abs(sPeaksTrue[:minPeaks] - sPeaksPred[:minPeaks]))
-    tMedAE = np.median(abs(tPeaksTrue[:minPeaks] - tPeaksPred[:minPeaks]))
-    # in index units, need to convert to time, keep track of sampling rates
-    # Contactless and ECG both report ms
 
-    medAEs = np.array([pMedAE, qMedAE, rMedAE, sMedAE, tMedAE])*5 #convert to ms
+    medAEs = np.array([np.median(pAbsErr), np.median(qAbsErr), np.median(rAbsErr), np.median(sAbsErr), np.median(tAbsErr)])
     
-    return aAEs, medAEs
+    return aAEs, medAEs, pAbsErr, qAbsErr, rAbsErr, sAbsErr, tAbsErr  #for overall median we need all the points for MedAE. if number of points is different per patient, we need weighted average for AAE
