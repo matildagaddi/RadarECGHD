@@ -25,7 +25,7 @@ CUTOFF = 30
 PEAK_THRESH = 0.3
 TRAIN_ITERS = 5
 
-### FOR FINAL EXPERIMENTS: ADD AS MANY FILES AS POSSIBLE 
+### FOR FINAL EXPERIMENTS: ADD AS MANY FILES AS POSSIBLE while remaining consistent in number of files across subjects
 train_files_r= ['trainVal/radar/GDN0004_Resting_radar_1.mat',
                 'trainVal/radar/GDN0004_Resting_radar_2.mat',
                 'trainVal/radar/GDN0004_Resting_radar_3.mat',
@@ -71,7 +71,7 @@ print("Using {} device".format(device))
 
 pAbsErrs, qAbsErrs, rAbsErrs, sAbsErrs, tAbsErrs = np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
 allCorr = np.array([])
-for subject in ['01', '02', '03', '04', '05']: #subject 06 has different indexing bc it's in the test folder
+for subject in ['04']: #subject 06 has different indexing bc it's in the test folder
     train_files_r[:][20:22] = subject
     train_files_e[:][18:20] = subject
     test_files_r[:][20:22] = subject
@@ -113,8 +113,9 @@ for subject in ['01', '02', '03', '04', '05']: #subject 06 has different indexin
                         plt.figure(figsize=(10, 5))
                         plt.plot(np.arange(len(labelsArr.flatten())), labelsArr.flatten(), label='Actual', color='blue')
                         plt.plot(np.arange(len(predictionsArrFiltered)), predictionsArrFiltered, label='Predicted', color='red')
-                        plt.title(f'Predicted ECG- iters:{TRAIN_ITERS}, FS:{fs}, window:{WINDOW_SIZE}- MSE:{(mse.compute().item()):.10f}_date')
-                        plt.annotate(f'AAEs (p,q,r,s,t):{AAEs} \n MedAEs (p,q,r,s,t):{medAEs} \n sample rate: {sr} \n correlation: {corr}',
+                        plt.title(f'Predicted ECG- iters:{TRAIN_ITERS}, SR:{sr}, window:{WINDOW_SIZE}')
+                        plt.annotate(f'Subject {subject}, num train files: {len(train_files_r)}, num test files: {len(test_files_r)} \n \
+                            AAEs (p,q,r,s,t):{AAEs} \n MedAEs (p,q,r,s,t):{medAEs} \n correlation: {corr:.5f}, MSE:{(mse.compute().item()):.5f}',
                                     xy = (1.0, -0.2),
                                     xycoords='axes fraction',
                                     ha='right',

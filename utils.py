@@ -66,7 +66,7 @@ class HDradarECG(nn.Module):
     def __init__(self, feat, dim, lr, device):
         super(HDradarECG, self).__init__()
         self.lr = lr
-        self.M = torch.zeros(1, dim).to(device)
+        self.M = torch.zeros(1, dim).to(device) ### Fatemeh insert PIONEER here
         self.project2 = embeddings.Sinusoid(feat, dim)
         self.bias = nn.parameter.Parameter(torch.empty(dim), requires_grad=False).to(device)
         self.bias.data.uniform_(0, 2 * math.pi) # bias
