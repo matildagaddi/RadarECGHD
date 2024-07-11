@@ -61,12 +61,43 @@ def test(test_dl, model, TARGET_MIN, TARGET_MAX, HD, device):
             predictionsArr = np.append(predictionsArr, predictions.cpu())
     return mse, labelsArr, predictionsArr
 
+#CHANGED
+class HypervectorGenerator(nn.Module):
+    """
+    architecture: 3 hidden layers  with Relu activation
+    the input is the data 1000 dim, output is 2k
+    """
+    def __init__(self, input_dim, hidden_dim1, hidden_dim2, hidden_dim3, output_dim):
+        super(HypervectorGenerator, self).__init__()
+        self.fc1 = nn.Linear(input_dim, hidden_dim1)
+        self.relu1 = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_dim1, hidden_dim2) 
+        self.relu2 = nn.ReLU()
+        self.fc3 = nn.Linear(hidden_dim2, hidden_dim3)
+        self.relu3 = nn.ReLU()
+        self.fc4 = nn.Linear(hidden_dim3, output_dim)
+    
+    def forward(self, x):
+        x = self.relu1(self.fc1(x))
+        x = self.relu2(self.fc2(x))
+        x = self.relu3(self.fc3(x))
+        x = self.fc4(x)
+        return x
+
 
 class HDradarECG(nn.Module):
-    def __init__(self, feat, dim, lr, device):
+    def __init__(self, feat, dim, lr, device, initial_input_data): #hidden_dims removed from params but can add back later
         super(HDradarECG, self).__init__()
         self.lr = lr
-        self.M = torch.zeros(1, dim).to(device) ### Fatemeh insert PIONEER here
+        input_dim = 24576#len(initial_input_data.flatten()) # Adjust input layer dimensions as needed #CHANGED #(1024-200) *200 #might need to flatten or change shape
+        hidden_dim1 = 512  # Adjust hidden layer dimensions as needed #CHANGED
+        hidden_dim2 = 256 # Adjust hidden layer dimensions as needed #CHANGED
+        hidden_dim3 = 128 # Adjust hidden layer dimensions as needed #CHANGED
+        output_dim = 10000 # Adjust output layer dimension as needed #CHANGED
+        self.hidden_dims = [hidden_dim1, hidden_dim2, hidden_dim3]
+        #self.M = torch.zeros(1, dim).to(device) ### Fatemeh insert PIONEER here
+        self.hypervector_generator = HypervectorGenerator(torch.tensor(24576), *self.hidden_dims, dim).to(device) #CHANGED
+        self.M = self.hypervector_generator(initial_input_data.flatten()) #CHANGED
         self.project2 = embeddings.Sinusoid(feat, dim)
         self.bias = nn.parameter.Parameter(torch.empty(dim), requires_grad=False).to(device)
         self.bias.data.uniform_(0, 2 * math.pi) # bias
