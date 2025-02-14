@@ -1,28 +1,36 @@
 # RadarECGHD
 
-## Files
-\@ = most revelant files being used
-
-#### Dataloaders:
-- 'dataset1' loads the raw radar and ecg data. (from apnea_dataset folder)
-- 'dataset1_1' also loads the raw data, more flexible/compatible with regHD and sliding windows.
-- \@ 'dataset2' loads the processed combined radar data and ecg signal in 5 second segment files used in the matlab example. (from DATASET folder)
+#### Data loader:
+- 'dataset2' loads the processed combined radar data and ecg signal in 5 second segment files. (from DATASET folder)
 
 #### Our methods:
-- 'regHD1' uses dataset1_1 and uses sliding window to try to infer ecg signal with regHD.
+- 'hyperecg' uses dataset2 and joint training of the regressor model hypervector and projection matrix. Various metrics are caclulated including accuracy Pearson correlation coefficient, average absolute error of PQRST peaks, and median absolute error PQRST peaks.
 - 'regHD2' uses dataset2 and uses sliding window to try to infer ecg signal with regHD.
-- 'regHD2cnn' uses dataset2 and uses sliding window to try to infer ecg signal with regHD with a cnn feature extractor.
-
-#### Baselines:
-- 'trainBase1' uses MatildaNet (from the FatemehNet file) with dataset1.
-- 'trainBase2' uses MatildaNet with dataset2 to infer with a neural network based on the one in the matlab example. Not in working condition.
-
-'test' folder has Fatemeh's experiments.
 
 ## Instructions:
-- With 'regHD2cnn', modify the 'path_to_DS' variable for your directory to each dataset
-- If you want to change the default files, designate which files you want to train and test on with the 'train_files_r', 'train_files_e', 'test_files_r', 'test_files_e' variables.
-- There is the option to change hyperparameters: hypervector dimensions, learning rate, train iterations, window size
+- With 'hyperecg.py', make sure the 'path_to_DS' variable is set to your path to the dataset, downloadable from https://ssd.mathworks.com/supportfiles/SPT/data/SynchronizedRadarECGData.zip
+- There is the option to change which files of radar and ECG data are used, hyperparameters: hypervector dimensions, learning rate, train iterations, window size
 
-in terminal, use command:
-- python3 regHD2cnn.py
+In terminal, use command:
+- python3 hyperecg.py
+
+Some packages that may need installation:
+```
+pip install PyWavelets
+pip install torchmetrics
+pip install neurokit2
+```
+
+## Citation
+```
+@INPROCEEDINGS{10820450,
+  author={Gaddi, Matilda and Ponzina, Flavio and Asgarinejad, Fatemeh and Aksanli, Baris and Rosing, Tajana},
+  booktitle={2024 IEEE 24th International Conference on Bioinformatics and Bioengineering (BIBE)}, 
+  title={HyperECG: ECG Signal Inference From Radar With Hyperdimensional Computing}, 
+  year={2024},
+  volume={},
+  number={},
+  pages={1-5},
+  keywords={Training;Runtime;Accuracy;Computational modeling;Estimation;Radar;Medical services;Electrocardiography;Encoding;Monitoring;Hyperdimensional Computing;ECG monitoring;wireless sensing;model personalization},
+  doi={10.1109/BIBE63649.2024.10820450}}
+  ```
